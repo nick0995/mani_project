@@ -56,7 +56,7 @@ const Header = () => {
         <div className="container mx-auto px-4 py-4">
           <div className="flex justify-between items-center">
             <div className="flex items-center space-x-4">
-              <img src="/images/logo.png" alt="Punjab Police Logo" className="h-16" />
+              <img src="/logo.webp" alt="Punjab Police Logo" className="h-16 w-auto bg-white rounded-lg shadow p-2" />
               <h1 className="text-2xl font-bold">PUNJAB POLICE TRAINING PORTAL</h1>
             </div>
             

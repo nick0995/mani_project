@@ -353,7 +353,15 @@ const AdminDashboard = () => {
   return (
     <div className="min-h-screen bg-gray-100 py-8">
       <div className="container mx-auto px-4">
+        {/* Logo */}
+        <div className="flex justify-center mb-6">
+          <img src="/main_logo.jpg" alt="Punjab Police Logo" className="h-20 w-auto" />
+        </div>
         <h1 className="text-3xl font-bold text-gray-800 mb-8">Admin Dashboard</h1>
+        {/* Dashboard Image */}
+        <div className="flex justify-center mb-8">
+          <img src="/main_3.webp" alt="Admin Dashboard" className="rounded-lg shadow-md max-h-64 w-auto" />
+        </div>
         
         {/* Navigation Tabs */}
         <div className="bg-white rounded-lg shadow-md mb-8">

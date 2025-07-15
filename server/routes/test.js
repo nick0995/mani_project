@@ -1,6 +1,6 @@
-const express = require('express');
-const { Question, TestResult } = require('../models');
-const { authMiddleware } = require('../middleware/auth');
+import express from 'express';
+import { Question, TestResult } from '../models/index.js';
+import { authMiddleware } from '../middleware/auth.js';
 const router = express.Router();
 
 // Get questions for a specific category
@@ -78,4 +78,4 @@ router.get('/results', authMiddleware, async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

@@ -71,7 +71,15 @@ const Home = () => {
           </p>
         </div>
       </div>
-
+      {/* Dashboard Images Section */}
+      <div className="container mx-auto px-4 py-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <img src="/main.webp" alt="Dashboard 1" className="rounded-lg shadow-md w-full h-48 object-cover" />
+          <img src="/main_3.webp" alt="Dashboard 2" className="rounded-lg shadow-md w-full h-48 object-cover" />
+          <img src="/main_2.jpg" alt="Dashboard 3" className="rounded-lg shadow-md w-full h-48 object-cover" />
+          <img src="/main_3.jpg" alt="Dashboard 4" className="rounded-lg shadow-md w-full h-48 object-cover" />
+        </div>
+      </div>
       {/* Stats Section */}
       <div className="py-16 bg-white">
         <div className="container mx-auto px-4">

@@ -1,22 +1,40 @@
-const express = require('express');
-const session = require('express-session');
-const cors = require('cors');
-const path = require('path');
-require('dotenv').config();
+import express from 'express';
+import session from 'express-session';
+import cors from 'cors';
+import path from 'path';
+import dotenv from 'dotenv';
+import { fileURLToPath } from 'url';
+import { sequelize } from './models/index.js';
+import authRoutes from './routes/auth.js';
+import adminRoutes from './routes/admin.js';
+import testRoutes from './routes/test.js';
 
-const { sequelize } = require('./models');
-const authRoutes = require('./routes/auth');
-const adminRoutes = require('./routes/admin');
-const testRoutes = require('./routes/test');
+dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Middleware
+// Allow CORS from a dynamic origin (set FRONTEND_ORIGIN in .env, defaults to localhost:5173)
+const allowedOrigins = [
+  process.env.FRONTEND_ORIGIN || 'http://localhost:5173',
+  'http://localhost:5173',
+  'http://localhost:3000',
+];
 app.use(cors({
-  origin: 'http://localhost:3000',
-  credentials: true
+  origin: function (origin, callback) {
+    // allow requests with no origin (like mobile apps, curl, etc.)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    } else {
+      return callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  optionsSuccessStatus: 200,
 }));
+console.log('avadvadvadv');
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -35,6 +53,10 @@ app.use(session({
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/test', testRoutes);
+
+// ESM-compatible __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Serve static files
 app.use(express.static(path.join(__dirname, '../dist')));

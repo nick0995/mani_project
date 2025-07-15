@@ -7,18 +7,24 @@ import { authAPI } from '../../services/api';
 const Login = () => {
   const [credentials, setCredentials] = useState({ username: '', password: '' });
   const [loginType, setLoginType] = useState('user');
+  const [formError, setFormError] = useState('');
+  const [hasSubmitted, setHasSubmitted] = useState(false);
   const { loading, error } = useSelector((state) => state.auth);
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setHasSubmitted(true);
+    setFormError('');
+    if (!credentials.username.trim() || !credentials.password.trim()) {
+      setFormError('Username and password are required.');
+      return;
+    }
     dispatch(loginStart());
-
     try {
       const response = await authAPI.login(credentials);
       dispatch(loginSuccess(response.data.user));
-      
       if (response.data.user.role === 'admin') {
         navigate('/admin');
       } else {
@@ -40,7 +46,6 @@ const Login = () => {
             Sign in to your account
           </p>
         </div>
-        
         <div className="bg-white rounded-lg shadow-xl p-8">
           <div className="mb-6">
             <div className="flex rounded-md shadow-sm">
@@ -68,8 +73,12 @@ const Login = () => {
               </button>
             </div>
           </div>
-
           <form className="space-y-6" onSubmit={handleSubmit}>
+            {formError && (
+              <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+                {formError}
+              </div>
+            )}
             <div>
               <label htmlFor="username" className="block text-sm font-medium text-gray-700">
                 Username
@@ -85,7 +94,6 @@ const Login = () => {
                 onChange={(e) => setCredentials({ ...credentials, username: e.target.value })}
               />
             </div>
-
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700">
                 Password
@@ -101,13 +109,11 @@ const Login = () => {
                 onChange={(e) => setCredentials({ ...credentials, password: e.target.value })}
               />
             </div>
-
-            {error && (
+            {error && hasSubmitted && (
               <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
                 {error}
               </div>
             )}
-
             <div>
               <button
                 type="submit"

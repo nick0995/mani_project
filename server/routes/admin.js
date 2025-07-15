@@ -1,9 +1,9 @@
-const express = require('express');
-const multer = require('multer');
-const csv = require('csv-parser');
-const fs = require('fs');
-const { User, Question } = require('../models');
-const { adminMiddleware } = require('../middleware/auth');
+import express from 'express';
+import multer from 'multer';
+import csv from 'csv-parser';
+import fs from 'fs';
+import { User, Question } from '../models/index.js';
+import { adminMiddleware } from '../middleware/auth.js';
 const router = express.Router();
 
 // Configure multer for file uploads
@@ -118,4 +118,4 @@ router.delete('/questions/:id', adminMiddleware, async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;
