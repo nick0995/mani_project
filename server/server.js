@@ -34,7 +34,6 @@ app.use(cors({
   credentials: true,
   optionsSuccessStatus: 200,
 }));
-console.log('avadvadvadv');
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
