@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>ICJS ASSESsMENT</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f4f6fa;
+      margin: 0;
+      padding: 0;
+    }
+
+    h2 {
+      text-align: center;
+      color: #2c3e50;
+      padding-top: 20px;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 20px auto;
+      background: #ffffff;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      padding: 30px;
+      position: relative;
+    }
+
+    .header {
+      background-color: #003366;
+      color: #ffffff;
+      font-weight: bold;
+      padding: 15px;
+      text-align: center;
+      font-size: 20px;
+      border-radius: 5px;
+    }
+
+    .instructions {
+      text-align: left;
+      font-size: 15px;
+      margin-top: 20px;
+      line-height: 1.7;
+    }
+
+    .instructions span {
+      color: #c0392b;
+      font-weight: bold;
+    }
+
+    ol {
+      padding-left: 20px;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      margin: 10px 0;
+      gap: 10px;
+    }
+
+    .legend div {
+      padding: 8px 12px;
+      border-radius: 5px;
+      font-size: 14px;
+      color: white;
+      min-width: 150px;
+      text-align: center;
+    }
+
+    .legend .red { background: #e74c3c; }
+    .legend .green { background: #27ae60; }
+    .legend .yellow { background: #f1c40f; color: #000; }
+    .legend .violet { background: #8e44ad; }
+    .legend .gray { background: #7f8c8d; }
+    .legend .white { background: #ecf0f1; color: #000; border: 1px solid #bdc3c7; }
+
+    .footer {
+      margin-top: 30px;
+      font-size: 15px;
+    }
+
+    #lang {
+      padding: 6px;
+      font-size: 14px;
+    }
+
+    .start-test {
+      margin-top: 30px;
+      padding: 12px 30px;
+      font-size: 16px;
+      background-color: #007acc;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    .start-test:hover {
+      background-color: #005f99;
+    }
+
+    label {
+      cursor: pointer;
+    }
+
+    .translate-btn {
+      position: absolute;
+      top: 15px;
+      right: 20px;
+      background-color: #e67e22;
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 4px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .translate-btn:hover {
+      background-color: #d35400;
+    }
+  </style>
+</head>
+<body>
+
+  <h2 id="main-title">Online CCTNS Training </h2>
+
+  <div class="container">
+    <button class="translate-btn" onclick="toggleLanguage()">Translate</button>
+
+    <div class="header" id="demo-title"> ONLINE TEST</div>
+
+    <div class="instructions">
+      <p><span id="instruction-title">Instruction for Online Test</span></p>
+      <p><span id="instruction-note">Please read the Instructions carefully before starting the test.</span></p>
+
+
+      <div class="legend">
+        <div class="red" id="legend-red">Red - Not answered</div>
+        <div class="green" id="legend-green">Green - Answered</div>
+        <div class="yellow" id="legend-yellow">Yellow - Not answered & Marked</div>
+        <div class="violet" id="legend-violet">Violet - Answered & Marked</div>
+        <div class="gray" id="legend-gray">Gray - Dumped</div>
+        <div class="white" id="legend-white">White - Not Visited</div>
+      </div>
+
+      <ol id="instruction-list">
+  <li id="step1">Click start test on bottom of your screen to begin the test.</li>
+  <li id="step2">The clock has been set at server and count down timer at the top right side of the screen...</li>
+  <li id="step3">Click one of the answers. Simply click the desired option button.</li>
+  <li id="step4">Candidate can change their response at any time...</li>
+  <li id="step5">Click on Next to save the answer and move to the next question.</li>
+  <li id="step6">Click on Mark for Review to review the answer later.</li>
+  <li id="step7">To select a question, click on the question number.</li>
+  <li id="step8">The colour code diagram:</li>
+</ol>
+<ol id="instruction-list-continued" start="9">
+  <li id="step9">You can shuffle between questions anytime.</li>
+  <li id="step10">Do not click final SUBMIT until you've completed the exam.</li>
+  <li id="step11">Score obtained will be displayed immediately after the test.</li>
+</ol>
+    </div>
+
+    <div class="footer">
+      <label for="lang" id="language-label">Choose your default language: </label>
+      <select id="lang">
+        <option>English</option>
+        <option>Punjabi</option>
+      </select>
+      <br><br>
+      <input type="checkbox" id="agree" />
+      <label for="agree" id="agree-label">I have read and understood the instructions given above.</label>
+    </div>
+
+  <button class="start-test" onclick="startTest()" id="start-btn">Start Test</button>
+  </div>
+
+  <script>
+    let currentLang = "en";
+
+    const translations = {
+  "main-title": { pa: "਑ਨਲਾਈਨ ਪ੍ਰੀਖਿਆ ਪ੍ਰਣਾਲੀ" },
+  "demo-title": { pa: "ਡੈਮੋ ਑ਨਲਾਈਨ ਟੈਸਟ" },
+  "instruction-title": { pa: "਑ਨਲਾਈਨ ਟੈਸਟ ਲਈ ਹੁਕਮ" },
+  "instruction-note": { pa: "ਕਿਰਪਾ ਕਰਕੇ ਟੈਸਟ ਸ਼ੁਰੂ ਕਰਨ ਤੋਂ ਪਹਿਲਾਂ ਸਾਰੇ ਹੁਕਮ ਪੜ੍ਹੋ।" },
+  "language-label": { pa: "ਆਪਣੀ ਡਿਫਾਲਟ ਭਾਸ਼ਾ ਚੁਣੋ:" },
+  "agree-label": { pa: "ਮੈਂ ਉਪਰੋਕਤ ਹੁਕਮ ਪੜ੍ਹ ਲਏ ਹਨ ਅਤੇ ਉਹਨਾਂ ਨੂੰ ਸਮਝ ਲਿਆ ਹੈ।" },
+  "start-btn": { pa: "ਟੈਸਟ ਸ਼ੁਰੂ ਕਰੋ" },
+
+  // Legend
+  "legend-red": { pa: "ਲਾਲ - ਜਵਾਬ ਨਹੀਂ ਦਿੱਤਾ" },
+  "legend-green": { pa: "ਹਰਾ - ਜਵਾਬ ਦਿੱਤਾ" },
+  "legend-yellow": { pa: "ਪੀਲਾ - ਜਵਾਬ ਨਹੀਂ ਦਿੱਤਾ ਅਤੇ ਸਮੀਖਿਆ ਲਈ ਚੁਣਿਆ" },
+  "legend-violet": { pa: "ਵਾਇਲਟ - ਜਵਾਬ ਦਿੱਤਾ ਅਤੇ ਸਮੀਖਿਆ ਲਈ ਚੁਣਿਆ" },
+  "legend-gray": { pa: "ਸਲੇਟੀ - ਰੱਦ ਕੀਤਾ" },
+  "legend-white": { pa: "ਚਿੱਟਾ - ਨਹੀਂ ਦੇਖਿਆ ਗਿਆ" },
+
+  // Instruction steps
+  "step1": { pa: "ਟੈਸਟ ਸ਼ੁਰੂ ਕਰਨ ਲਈ ਸਕਰੀਨ ਦੇ ਹੇਠਾਂ ਦਿੱਤੇ ਬਟਨ 'Start Test' 'ਤੇ ਕਲਿੱਕ ਕਰੋ।" },
+  "step2": { pa: "ਟਾਈਮਰ ਸਰਵਰ ਵੱਲੋਂ ਸੈੱਟ ਕੀਤਾ ਗਿਆ ਹੈ ਅਤੇ ਸਕਰੀਨ ਦੇ ਉਪਰਲੇ ਸੱਜੇ ਪਾਸੇ ਦਿਖਾਈ ਦੇ ਰਿਹਾ ਹੈ।" },
+  "step3": { pa: "ਇੱਕ ਜਵਾਬ ਚੁਣਨ ਲਈ ਉਚਿਤ ਵਿਕਲਪ ਬਟਨ 'ਤੇ ਕਲਿੱਕ ਕਰੋ।" },
+  "step4": { pa: "ਉਮੀਦਵਾਰ ਕਿਸੇ ਵੀ ਸਮੇਂ ਆਪਣਾ ਜਵਾਬ ਬਦਲ ਸਕਦਾ ਹੈ।" },
+  "step5": { pa: "ਜਵਾਬ ਨੂੰ ਸੰਭਾਲਣ ਅਤੇ ਅਗਲੇ ਪ੍ਰਸ਼ਨ 'ਤੇ ਜਾਣ ਲਈ 'Next' 'ਤੇ ਕਲਿੱਕ ਕਰੋ।" },
+  "step6": { pa: "'Mark for Review' 'ਤੇ ਕਲਿੱਕ ਕਰਕੇ ਬਾਅਦ ਵਿੱਚ ਸਮੀਖਿਆ ਕਰੋ।" },
+  "step7": { pa: "ਕਿਸੇ ਪ੍ਰਸ਼ਨ ਨੂੰ ਚੁਣਨ ਲਈ ਨੰਬਰ 'ਤੇ ਕਲਿੱਕ ਕਰੋ।" },
+  "step8": { pa: "ਰੰਗ ਕੋਡ ਡਾਇਗ੍ਰਾਮ:" },
+  "step9": { pa: "ਤੁਸੀਂ ਕਿਸੇ ਵੀ ਸਮੇਂ ਪ੍ਰਸ਼ਨਾਂ ਵਿੱਚ ਅਦਲ-ਬਦਲ ਕਰ ਸਕਦੇ ਹੋ।" },
+  "step10": { pa: "'Submit' ਬਟਨ ਨਾ ਦੱਬੋ ਜਦੋਂ ਤੱਕ ਤੁਸੀਂ ਟੈਸਟ ਪੂਰਾ ਨਹੀਂ ਕਰ ਲੈਂਦੇ।" },
+  "step11": { pa: "ਸਕੋਰ ਤੁਰੰਤ ਟੈਸਟ ਖਤਮ ਹੋਣ 'ਤੇ ਦਿਖਾਇਆ ਜਾਵੇਗਾ।" }
+};
+
+
+    function toggleLanguage() {
+      const isPunjabi = currentLang === "pa";
+      currentLang = isPunjabi ? "en" : "pa";
+
+      for (const id in translations) {
+        const el = document.getElementById(id);
+        if (el && translations[id]) {
+          el.textContent = currentLang === "pa" ? translations[id].pa : el.getAttribute("data-original") || el.textContent;
+        }
+      }
+
+      // Store original text on first switch
+      if (!isPunjabi) {
+        for (const id in translations) {
+          const el = document.getElementById(id);
+          if (el && !el.getAttribute("data-original")) {
+            el.setAttribute("data-original", el.textContent);
+          }
+        }
+      }
+    }
+
+     function startTest() {
+    if (!document.getElementById('agree').checked) {
+      alert(currentLang === "pa" ? "ਕਿਰਪਾ ਕਰਕੇ ਟੈਸਟ ਸ਼ੁਰੂ ਕਰਨ ਤੋਂ ਪਹਿਲਾਂ ਸਹਿਮਤ ਹੋਵੋ।" : "Please agree to the instructions before starting.");
+      return;
+    }
+    window.location.href = "/test";
+  }
+ 
+  </script>
+
+</body>
+</html>
