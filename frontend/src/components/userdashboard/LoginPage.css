@@ -1,0 +1,214 @@
+.login-container {
+  display: flex;
+  height: 100vh;
+  font-family: Arial, sans-serif;
+  overflow: hidden;
+}
+
+/* Left Side (70%) with Background Slideshow */
+.left-side {
+  flex: 7;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  overflow: hidden;
+}
+
+/* Background images cycling */
+.left-side::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-size: cover;
+  background-position: center;
+  animation: slideshow 40s infinite;
+  z-index: 0;
+  filter: brightness(0.75);
+  border-right: 1px solid #ddd;
+}
+
+/* @keyframes slideshow {
+  0% { background-image: url("E:\m\ppreact\frontend\public\images\IMG_4586.JPG"); }
+  14% { background-image: url("E:\last laptop\ppreact\frontend\public\images\IMG_4584.JPG"); }
+  28% { background-image: url("E:\last laptop\ppreact\frontend\public\images\IMG_4584.JPG"); }
+  42% { background-image: url("https://via.placeholder.com/1200x800?text=Image+4"); }
+  56% { background-image: url("https://via.placeholder.com/1200x800?text=Image+5"); }
+  70% { background-image: url("E:\last laptop\ppreact\frontend\public\images\IMG_4584.JPG"); }
+  84% { background-image: url("https://via.placeholder.com/1200x800?text=Image+7"); }
+  100% { background-image: url("https://via.placeholder.com/1200x800?text=Image+8"); }
+} */
+
+/* Left side should scroll but header fixed */
+.form-logo {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 15px;
+  perspective: 1000px; /* gives 3D depth */
+}
+
+.form-logo img {
+  width: 100px;   /* adjust size */
+  height: auto;
+  animation: spin3D 6s linear infinite;
+  transform-style: preserve-3d;
+}
+
+@keyframes spin3D {
+  0%   { transform: rotateY(0deg); }
+  100% { transform: rotateY(360deg); }
+}
+
+/* Welcome header fixed */
+.welcome-header {
+  position: sticky;
+  top: 0;
+  width: 100%;
+  text-align: center;
+  padding: 20px 15px;
+  background: rgba(255, 255, 255, 0.85); /* semi-transparent backdrop */
+  z-index: 2;
+  border-bottom: 2px solid #000715;
+   border-top: 2px solid #000715;
+}
+
+.welcome-header h1 {
+  font-size: 2.2rem;
+  font-weight: 800;
+  color: #003366;
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* C-shaped instruction box */
+.c-shape-box {
+  border-top: 3px solid #000715;
+  border-bottom: 3px solid #000715;
+  border-left: 3px solid #000715;
+  border-radius: 20px 0 0 20px; /* makes C shape */
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 4px 0 8px rgba(0, 0, 0, 0.1);
+  max-width: 350px;
+  margin-left: auto;
+  z-index:1;
+}
+
+.c-shape-box h2 {
+  font-size: 20px;
+  margin-bottom: 12px;
+  color: #007bff;
+}
+
+.c-shape-box ul {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.c-shape-box li {
+  margin: 8px 0;
+  font-size: 14px;
+  color: #333;
+}
+
+/* Right Side (30%) */
+.right-side {
+  flex: 3;
+  background: #000715;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-left: 1px solid #ddd;
+  z-index: 2;
+}
+
+.form-box {
+  width: 85%;
+  max-width: 350px;
+  text-align: center;
+}
+
+.form-box h2 {
+  margin-bottom: 20px;
+  font-size: 40px;
+  font-weight: bold;
+  color:#fff
+}
+
+/* Form Styles */
+.form-box form {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-box input {
+  margin: 8px 0;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-size: 14px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.form-box input:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 5px rgba(0, 123, 255, 0.3);
+}
+
+.form-box button {
+  margin-top: 15px;
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  background: #007bff;
+  color: white;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: bold;
+  transition: background 0.3s ease;
+}
+
+.form-box button:hover {
+  background: #0056b3;
+}
+
+.toggle-text {
+  margin-top: 1rem;
+  font-size: 0.9rem;
+  color:#e93434
+}
+
+.toggle-text span {
+  color: #fff;
+  font-weight: bold;
+  cursor: pointer;
+  margin-left: 5px;
+  transition: color 0.3s;
+}
+
+.toggle-text span:hover {
+  color: #ff6600;
+}
+
+/* ===== Admin Checkbox ===== */
+.admin-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+  color: #e93434;
+}
+
+.admin-check input[type="checkbox"] {
+  transform: scale(1.2);
+  accent-color: #002147; /* modern browsers */
+  cursor: pointer;
+      max-width: 30px;
+}

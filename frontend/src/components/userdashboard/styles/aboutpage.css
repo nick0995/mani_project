@@ -1,0 +1,68 @@
+#app {
+  --width: min(1000px, 90vw);
+  height: 100%;
+  display: grid;
+  place-items: center;
+}
+
+.shuffle {
+  width: min(var(--width));
+  list-style-type: none;
+  display: grid;
+  padding: 0;
+  margin: 0;
+}
+
+.shuffle li {
+  position: relative;
+  grid-column: 1;
+  grid-row: 1;
+  width: calc(var(--width) / 5);
+  aspect-ratio: 1;
+  cursor: pointer;
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  box-shadow: 0 2px 7px rgba(0, 0, 0, 0.6);
+  transition: translate 0.8s, scale 0.8s;
+  will-change: transform;
+}
+
+.shuffle li::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  pointer-events: none;
+}
+
+.shuffle li[data-pos="0"] {
+  scale: 1;
+  z-index: 1;
+}
+.shuffle li[data-pos="1"] {
+  scale: 1.4;
+  z-index: 5;
+}
+.shuffle li[data-pos="2"] {
+  scale: 1.8;
+  z-index: 10;
+}
+.shuffle li[data-pos="3"] {
+  scale: 1.4;
+  z-index: 5;
+}
+.shuffle li[data-pos="4"] {
+  scale: 1;
+  z-index: 1;
+}
+
+.shuffle li[data-pos="1"]::after {
+  background-color: rgba(0, 0, 0, 0.4);
+}
+.shuffle li[data-pos="2"]::after {
+  background-color: transparent;
+}
+.shuffle li[data-pos="3"]::after {
+  background-color: rgba(0, 0, 0, 0.4);
+}
