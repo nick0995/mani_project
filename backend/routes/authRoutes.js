@@ -120,4 +120,69 @@ router.post("/verify", requireAuth, async (req, res) => {
   return res.json({ valid: true, role: req.user.role, userId: req.user.id });
 });
 
+/**
+ * GET /api/auth/users
+ * Fetch all users (admin only)
+ */
+router.get("/users", requireAuth, async (req, res) => {
+  if (req.user.role !== "admin") {
+    return res.status(403).json({ message: "Forbidden" });
+  }
+  try {
+    const q = await pool.query(
+      `SELECT id, username, name, rank, belt, mobile, email, district, police_station, role FROM users ORDER BY id DESC`
+    );
+    res.json(q.rows);
+  } catch (err) {
+    console.error("Fetch users error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+/**
+ * PUT /api/auth/users/:id
+ * Update user info (admin only)
+ * Body: { name, rank, belt, mobile, email, district, policeStation, role }
+ */
+router.put("/users/:id", requireAuth, async (req, res) => {
+  if (req.user.role !== "admin") {
+    return res.status(403).json({ message: "Forbidden" });
+  }
+  const { id } = req.params;
+  const { name, rank, belt, mobile, email, district, policeStation, role } = req.body;
+  try {
+    const q = await pool.query(
+      `UPDATE users SET
+        name = $1, rank = $2, belt = $3, mobile = $4, email = $5, district = $6, police_station = $7, role = $8
+        WHERE id = $9
+        RETURNING id, username, name, rank, belt, mobile, email, district, police_station, role`,
+      [name, rank, belt, mobile, email, district, policeStation, role, id]
+    );
+    if (q.rowCount === 0) return res.status(404).json({ message: "User not found" });
+    res.json(q.rows[0]);
+  } catch (err) {
+    console.error("Update user error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+/**
+ * DELETE /api/auth/users/:id
+ * Remove user (admin only)
+ */
+router.delete("/users/:id", requireAuth, async (req, res) => {
+  if (req.user.role !== "admin") {
+    return res.status(403).json({ message: "Forbidden" });
+  }
+  const { id } = req.params;
+  try {
+    const q = await pool.query(`DELETE FROM users WHERE id = $1 RETURNING id`, [id]);
+    if (q.rowCount === 0) return res.status(404).json({ message: "User not found" });
+    res.json({ message: "User deleted", id });
+  } catch (err) {
+    console.error("Delete user error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
 export default router;

@@ -104,12 +104,57 @@ function downloadText(filename, text) {
   URL.revokeObjectURL(url);
 }
 
+const API_BASE = "http://localhost:5000/api/auth";
+
+// Helper to get auth token (adjust as per your auth logic)
+function getToken() {
+  return localStorage.getItem("authToken");
+}
+
+// Fetch all users
+async function fetchUsers() {
+  const res = await fetch(`${API_BASE}/users`, {
+    headers: { Authorization: `Bearer ${getToken()}` }
+  });
+  if (!res.ok) throw new Error("Failed to fetch users");
+  return await res.json();
+}
+
+// Update user
+async function updateUserApi(id, data) {
+  const res = await fetch(`${API_BASE}/users/${id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${getToken()}`
+    },
+    body: JSON.stringify(data)
+  });
+  if (!res.ok) throw new Error("Failed to update user");
+  return await res.json();
+}
+
+// Remove user
+async function removeUserApi(id) {
+  const res = await fetch(`${API_BASE}/users/${id}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${getToken()}` }
+  });
+  if (!res.ok) throw new Error("Failed to delete user");
+  return await res.json();
+}
+
 export default function AdminDashboard() {
   // Global app state (mock backend)
-  const [users, setUsers] = useState([
-    { id: uid(), name: "Amandeep Singh", rank: "ASI", belt: "PB1234", mobile: "9876543210", email: "aman@example.com", createdAt: todayISO() },
-    { id: uid(), name: "Simran Kaur", rank: "HC", belt: "PB5678", mobile: "9876501234", email: "simran@example.com", createdAt: todayISO() },
-  ]);
+  const [users, setUsers] = useState([]);
+const [loadingUsers, setLoadingUsers] = useState(true);
+
+React.useEffect(() => {
+  fetchUsers()
+    .then(setUsers)
+    .catch(() => setUsers([]))
+    .finally(() => setLoadingUsers(false));
+}, []);
 
   const [courses, setCourses] = useState(seedCourses);
 
@@ -257,12 +302,17 @@ export default function AdminDashboard() {
 
   function RemoveUser() {
     const [target, setTarget] = useState(null);
-    const onDelete = () => {
-      if (!target) return;
-      setUsers(prev => prev.filter(u => u.id !== target.id));
-      pushNote("user_deleted", `User ${target.name} deleted`);
-      setTarget(null);
-    };
+    const onDelete = async () => {
+  if (!target) return;
+  try {
+    await removeUserApi(target.id);
+    setUsers(prev => prev.filter(u => u.id !== target.id));
+    pushNote("user_deleted", `User ${target.name} deleted`);
+    setTarget(null);
+  } catch (err) {
+    alert("Failed to delete user");
+  }
+};
     return (
       <Section title="Remove User" icon={UserX} actions={<Dialog>
         <DialogTrigger asChild>
@@ -295,11 +345,16 @@ export default function AdminDashboard() {
     const [target, setTarget] = useState(null);
     const [form, setForm] = useState({ name: "", rank: "", belt: "", mobile: "", email: "" });
     const load = (u) => { setTarget(u); setForm(u); };
-    const onSave = () => {
-      if (!target) return;
-      setUsers(prev => prev.map(u => u.id === target.id ? { ...u, ...form } : u));
-      pushNote("user_updated", `User ${form.name} updated`);
-    };
+    const onSave = async () => {
+  if (!target) return;
+  try {
+    const updated = await updateUserApi(target.id, form);
+    setUsers(prev => prev.map(u => u.id === target.id ? updated : u));
+    pushNote("user_updated", `User ${form.name} updated`);
+  } catch (err) {
+    alert("Failed to update user");
+  }
+};
     return (
       <Section title="Update User" icon={UserCog} actions={<Button onClick={onSave} disabled={!target}>Save Changes</Button>}>
         <FindUser onSelect={load} label="Load" />
@@ -883,10 +938,16 @@ export default function AdminDashboard() {
           </TabsContent>
 
           <TabsContent value="user" className="mt-6 grid gap-6">
-            <AddUser />
-            <UpdateUser />
-            <RemoveUser />
-            <UserAchievement />
+            {loadingUsers ? (
+              <div>Loading users...</div>
+            ) : (
+              <>
+                <AddUser />
+                <UpdateUser />
+                <RemoveUser />
+                <UserAchievement />
+              </>
+            )}
           </TabsContent>
 
           <TabsContent value="course" className="mt-6">
