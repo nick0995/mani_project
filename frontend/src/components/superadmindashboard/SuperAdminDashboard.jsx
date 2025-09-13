@@ -1151,4 +1151,5 @@ function FindUser({ users = [], onSelect, label = "Find" }) {
       </footer>
       </div>
     </div>
-  
+  );
+}
