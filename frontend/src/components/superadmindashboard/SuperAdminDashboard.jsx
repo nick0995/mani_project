@@ -97,6 +97,46 @@ function downloadText(filename, text) {
   URL.revokeObjectURL(url);
 }
 
+const API_BASE = "http://localhost:5000/api/auth";
+
+// Helper to get auth token (adjust as per your auth logic)
+function getToken() {
+  return localStorage.getItem("authToken");
+}
+
+// Fetch all users
+async function fetchUsers() {
+  const res = await fetch(`${API_BASE}/users`, {
+    headers: { Authorization: `Bearer ${getToken()}` }
+  });
+  if (!res.ok) throw new Error("Failed to fetch users");
+  return await res.json();
+}
+
+// Update user
+async function updateUserApi(id, data) {
+  const res = await fetch(`${API_BASE}/users/${id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${getToken()}`
+    },
+    body: JSON.stringify(data)
+  });
+  if (!res.ok) throw new Error("Failed to update user");
+  return await res.json();
+}
+
+// Remove user
+async function removeUserApi(id) {
+  const res = await fetch(`${API_BASE}/users/${id}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${getToken()}` }
+  });
+  if (!res.ok) throw new Error("Failed to delete user");
+  return await res.json();
+}
+
 export default function AdminDashboard() {
   const navigate = useNavigate();
   const [users, setUsers] = useState([]);
