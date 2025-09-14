@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 
 const SocialSidebar = () => {
-  const [openIndex, setOpenIndex] = useState(null);
+  const [hoverIndex, setHoverIndex] = useState(null);
   const sidebarRef = useRef(null);
 
   const links = [
@@ -53,20 +53,16 @@ const SocialSidebar = () => {
     }
   };
 
-  // Close label when clicking outside
+  // Reset when mouse leaves entire sidebar
   useEffect(() => {
-    const handleOutsideClick = (event) => {
-      if (
-        sidebarRef.current &&
-        !sidebarRef.current.contains(event.target)
-      ) {
-        setOpenIndex(null);
+    const handleOutside = (e) => {
+      if (sidebarRef.current && !sidebarRef.current.contains(e.target)) {
+        setHoverIndex(null);
       }
     };
-
-    document.addEventListener("mousedown", handleOutsideClick);
+    document.addEventListener("mousemove", handleOutside);
     return () => {
-      document.removeEventListener("mousedown", handleOutsideClick);
+      document.removeEventListener("mousemove", handleOutside);
     };
   }, []);
 
@@ -76,24 +72,25 @@ const SocialSidebar = () => {
         {links.map((link, index) => (
           <div
             key={index}
-            className={`social-icon ${openIndex === index ? "open" : ""}`}
+            className={`social-icon ${hoverIndex === index ? "open" : ""}`}
             style={{ background: link.bg }}
+            onMouseEnter={() => setHoverIndex(index)}
+            onMouseLeave={() => setHoverIndex(null)}
           >
-            {/* Click image → toggle span */}
             <img
               src={link.icon}
               alt={link.name}
-              onClick={() =>
-                setOpenIndex(openIndex === index ? null : index)
-              }
               style={{ cursor: "pointer" }}
             />
 
-            {/* Click span → open link */}
-            {openIndex === index && (
+            {hoverIndex === index && (
               <span
                 onClick={() => handleLinkClick(link.url)}
-                style={{ cursor: "pointer", textDecoration: "underline" }}
+                style={{
+                  cursor: "pointer",
+                  textDecoration: "underline",
+                  marginLeft: "8px",
+                }}
               >
                 {link.name}
               </span>

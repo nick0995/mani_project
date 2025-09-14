@@ -4,36 +4,36 @@ import "./EmergencySidebar.css";
 const services = [
   {
     title: "Women Power Line",
-    frontImg: "images/41.jpg",
-    backImg: "images/2.jpg",
+    frontImg: "images/women.png",
+    backImg: "images/women2.png",
     link: "http://www.wcso.in/",
   },
   {
     title: "UP 112 Control Room",
-    frontImg: "images/up-100-logo.png",
-    backImg: "images/1.jpg",
+    frontImg: "images/112.jpg",
+    backImg: "images/1122.png",
     link: "http://112.up.gov.in",
   },
   {
     title: "Cyber Crime",
-    frontImg: "images/cyber-left-f.jpg",
+    frontImg: "images/cyber1.jpg",
     backImg: "images/cyber-left.jpg",
     link: "https://cybercrime.gov.in/",
   },
   {
     title: "Fire Brigade",
-    frontImg: "images/fire-front.jpg",
+    frontImg: "images/fire1.jpg",
     backImg: "images/4.jpg",
     link: "https://upfireservice.gov.in/",
   },
   {
     title: "Ambulance",
-    frontImg: "images/ambulance-front.jpg",
+    frontImg: "images/ambua.png",
     backImg: "images/3.jpg",
   },
   {
     title: "Child Helpline",
-    frontImg: "images/child-front.jpg",
+    frontImg: "images/child1.jpg",
     backImg: "images/child-5.jpg",
   },
 ];

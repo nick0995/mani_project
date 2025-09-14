@@ -6,7 +6,7 @@ const Footer = () => {
     <footer className="footer">
       <div className="container">
         <div className="row">
-          <div className="col-lg-4 mb-5 mb-lg-0">
+          <div className="col">
             <div className="footer-logo">Punjab Police<span> Training Program</span></div>
             <p className="mt-3 mb-4">Providing quality professional training and certification programs to help individuals advance their careers.</p>
            <div className="social-links">

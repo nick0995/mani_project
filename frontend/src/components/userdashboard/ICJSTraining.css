@@ -1,0 +1,299 @@
+/* ICJSTraining.css */
+
+/* General Layout */
+.icjs-container {
+  font-family: "Segoe UI", Roboto, sans-serif;
+  color: #222;
+  background: #cad0d4;
+  padding-bottom: 50px;
+}
+
+/* Hero Banner */
+.icjs-hero {
+  position: relative;
+  height: 380px;
+  overflow: hidden;
+  border-radius: 0 0 20px 20px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+}
+
+.icjs-hero img {
+  width: 100%;
+  height: 155%;
+  
+  filter: brightness(70%);
+}
+
+.icjs-hero .hero-text {
+  position: absolute;
+  bottom: 30px;
+  left: 50px;
+  color: #fff;
+}
+.hero-text{
+    text-align: center;
+    color: #000715;
+    background-color: #cad0d4;
+}
+
+.icjs-hero h1 {
+  font-size: 2.2rem;
+  margin: 0;
+}
+
+.icjs-hero p {
+  margin: 5px 0 0;
+  font-size: 1.8rem;
+  opacity: 0.9;
+}
+
+/* Tabs */
+.icjs-tabs {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 25px auto;
+  max-width: 100%;
+  padding: 0 15px;
+}
+
+.icjs-tab-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.tab-btn {
+  padding: 10px 18px;
+  border: none;
+  border-radius: 8px;
+  background: #e6e9f0;
+  color: #333;
+  font-weight: 500;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.tab-btn:hover {
+  background: #d1d6e0;
+}
+
+.tab-btn.active {
+  background: linear-gradient(135deg, #2a6ff2, #4f9eff);
+  color: #fff;
+  box-shadow: 0 4px 10px rgba(42,111,242,0.4);
+}
+
+.primary-btn,
+.secondary-btn,
+.success-btn {
+  border: none;
+  cursor: pointer;
+  padding: 10px 18px;
+  border-radius: 8px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.primary-btn {
+  background: linear-gradient(135deg, #2a6ff2, #4f9eff);
+  color: #fff;
+}
+
+.primary-btn:hover {
+  opacity: 0.9;
+}
+
+.secondary-btn {
+  background: #f0f2f5;
+  color: #333;
+}
+
+.secondary-btn:hover {
+  background: #e2e5ea;
+}
+
+.success-btn {
+  background: linear-gradient(135deg, #16a34a, #22c55e);
+  color: #fff;
+}
+
+.success-btn:hover {
+  opacity: 0.9;
+}
+
+/* Overview Section */
+.overview-section {
+    
+    max-width: 100%;
+    margin: auto;
+  padding: 20px;
+}
+
+.overview-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 25px;
+  margin-top: 20px;
+}
+
+.overview-grid ul li {
+  margin: 8px 0;
+  font-size: 1.2rem;
+}
+
+/* Video */
+
+/* Responsive video wrapper (maintain aspect ratio) */
+.video-container {
+  width: 100%;
+  border-radius: 10px;
+  overflow: hidden;
+  background: linear-gradient(180deg,#0f172a06,#0f172a03);
+  box-shadow: 0 6px 18px rgba(2,6,23,0.06);
+}
+
+.video-container iframe {
+  width: 100%;
+  height: 100%;
+  min-height: 260px;
+  border: 0;
+  display: block;
+}
+
+/* If you want true responsive aspect ratio: */
+.embed-responsive {
+  position: relative;
+  width: 100%;
+  padding-bottom: 56.25%; /* 16:9 */
+  height: 0;
+}
+.embed-responsive iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* Materials */
+.materials-section {
+  max-width: 1100px;
+  margin: auto;
+  padding: 20px;
+}
+
+.resources-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit,minmax(250px,1fr));
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.resource-card {
+  background: #fff;
+  padding: 15px;
+  border-radius: 12px;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  transition: transform 0.3s ease;
+}
+
+.resource-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+}
+
+.resource-card img {
+  width: 60px;
+  height: 60px;
+  object-fit: contain;
+}
+
+/* Quiz */
+.quiz-section {
+  max-width: 900px;
+  margin: auto;
+  padding: 20px;
+}
+
+.progress-bar {
+  width: 100%;
+  background: #e5e7eb;
+  height: 12px;
+  border-radius: 6px;
+  margin: 15px 0;
+  overflow: hidden;
+}
+
+.progress {
+  height: 100%;
+  background: linear-gradient(135deg, #2a6ff2, #4f9eff);
+  transition: width 0.4s ease;
+}
+
+.progress-text {
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.question-card {
+  background: #fff;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 3px 12px rgba(0,0,0,0.1);
+  margin-top: 15px;
+}
+
+.question-count {
+  font-size: 0.9rem;
+  color: #666;
+  margin-bottom: 8px;
+}
+
+.options label {
+  display: block;
+  margin: 8px 0;
+  padding: 10px;
+  border-radius: 8px;
+  background: #f9fafc;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.options input {
+  margin-right: 8px;
+}
+
+.options label:hover {
+  background: #eef3ff;
+}
+
+/* Quiz Navigation */
+.quiz-nav {
+  margin-top: 20px;
+  display: flex;
+  justify-content: space-between;
+}
+
+/* Certificate */
+.certificate {
+  
+  margin-top: 30px;
+  padding: 40px 20px;
+  border-radius: 16px;
+  text-align: center;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+}
+
+.certificate h2 {
+  font-size: 1.8rem;
+  margin-bottom: 10px;
+}
+
+.certificate-sign {
+  display: flex;
+  justify-content: space-around;
+  margin: 20px 0 15px;
+  font-weight: 600;
+}

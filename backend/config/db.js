@@ -1,18 +1,17 @@
-// config/db.js
-import dotenv from "dotenv";
 import pkg from "pg";
-const { Pool } = pkg;
+import dotenv from "dotenv";
+
 dotenv.config();
+const { Pool } = pkg;
 
-
-
-const pool = new Pool({
-  user: process.env.DB_USER || "postgres",
-  host: process.env.DB_HOST || "localhost",
-  database: process.env.DB_NAME || "ppreactdb",
-  password: process.env.DB_PASSWORD || "maninder",
-  port: process.env.DB_PORT || 5432,
+export const pool = new Pool({
+  host: process.env.PG_HOST || "localhost",
+  port: process.env.PG_PORT || 5432,
+  user: process.env.PG_USER || "postgres",
+  password: process.env.PG_PASSWORD || "maninder",
+  database: process.env.PG_DATABASE||"ppreactdb",
 });
+
 
 pool.on("connect", () => {
   console.log("✅ PostgreSQL connected");
@@ -21,5 +20,4 @@ pool.on("connect", () => {
 pool.on("error", (err) => {
   console.error("❌ PostgreSQL error:", err);
 });
-
-export { pool };
+export default pool;

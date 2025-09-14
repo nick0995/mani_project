@@ -99,7 +99,7 @@ function TestPage({
                 <div className="test-header flex justify-between items-center">
                     <h1>ICJS Test</h1>
                     <div className="flex items-center gap-6">
-                        <div className="text-gray-800 font-medium">
+                        <div className="text-gray-800  font-medium">
                           👤 {username}
                         </div>
                         <div className="timer-container">

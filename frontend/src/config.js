@@ -1,7 +1,7 @@
 import axios from "axios";
 
 // 🔹 define API base URL first
-const API_BASE = "http://localhost:5000/api/auth";  // update if needed
+const API_BASE = "http://localhost:5000/api/auth"; // ✅ Correct base
 
 // 🔹 create axios instance
 const api = axios.create({
@@ -9,7 +9,7 @@ const api = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
-});
+}); 
 
 // optional: attach token automatically
 api.interceptors.request.use((config) => {

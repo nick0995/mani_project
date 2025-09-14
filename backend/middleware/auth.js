@@ -1,25 +1,30 @@
-// middleware/auth.js
 import jwt from "jsonwebtoken";
 
 export function requireAuth(req, res, next) {
-  try {
-    const auth = req.headers.authorization || "";
-    const token = auth.startsWith("Bearer ") ? auth.slice(7) : null;
-    if (!token) return res.status(401).json({ message: "No token provided" });
+  const header = req.headers.authorization;
+  if (!header) return res.status(401).json({ message: "Missing token" });
 
+  const token = header.split(" ")[1];
+  try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded; // { id, role }
+    req.user = decoded;
     next();
-  } catch (err) {
-    return res.status(401).json({ message: "Invalid or expired token" });
+  } catch {
+    return res.status(401).json({ message: "Invalid token" });
   }
 }
 
-export function requireRole(role) {
-  return (req, res, next) => {
-    if (!req.user || req.user.role !== role) {
-      return res.status(403).json({ message: "Forbidden" });
+export function requireAdmin(req, res, next) {
+  requireAuth(req, res, () => {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ message: "Admin access required" });
     }
     next();
-  };
+  });
+}
+export function requireSuperAdmin(req, res, next) {
+  if (!req.user || req.user.role !== "superadmin") {
+    return res.status(403).json({ message: "Superadmin access required" });
+  }
+  next();
 }

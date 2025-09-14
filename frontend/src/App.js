@@ -1,7 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, useLocation, Navigate, useNavigate } from 'react-router-dom'; 
 import React, { useState, useEffect } from 'react';
 import Papa from 'papaparse';
-import AdminDashboard from  './components/AdminDashboard';
+import AdminDashboard from  './components/admindashboard/AdminDashboard';
 import Navbar from './components/userdashboard/Navbar';
 import HeroSection from './components/userdashboard/HeroSection';
 import FeaturesSection from './components/userdashboard/FeaturesSection';
@@ -21,6 +21,7 @@ import Mylearning from './components/userdashboard/mylearning';
 import LatestPage from './components/userdashboard/LatestPage';
 import SocialSidebar from './components/userdashboard/socialsidebar';
 import LoginPage from './components/userdashboard/LoginPage';
+import SuperAdminDashboard from './components/superadmindashboard/SuperAdminDashboard';
 import ProtectedRoute from './components/userdashboard/ProtectedRoute';
 
 const initialQuestions = [
@@ -39,7 +40,7 @@ function App() {
   const [testStarted, setTestStarted] = useState(false);
   const [questions, setQuestions] = useState(initialQuestions);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(60 * 60);
+  const [timeLeft, setTimeLeft] = useState(20 * 60);
 
   const location = useLocation();
   const navigate = useNavigate();
@@ -88,13 +89,15 @@ function App() {
 
   // ✅ logout clears localStorage
   const handleLogout = () => {
+    localStorage.removeItem("token");
     setIsLoggedIn(false);
     setUsername('');
-    setRole('');
+    setRole(null);
     localStorage.clear();
+    navigate("/login");
   };
 
-  const hideHeaderFooter = ['/TestPage', '/instruction' , '/mylearning', '/login', '/AdminDashboard'].includes(location.pathname);
+  const hideHeaderFooter = ['/TestPage', '/instruction' , '/mylearning', '/login', '/adminDashboard', '/superAdminDashboard'].includes(location.pathname);
   const getNavLinkClass = (path) => (location.pathname === path ? 'active' : '');
 
   // ✅ load CSV questions
@@ -162,7 +165,7 @@ function App() {
   const startTest = () => {
     setTestStarted(true);
     setCurrentQuestionIndex(0);
-    setTimeLeft(60 * 60);
+    setTimeLeft(20 * 60);
     navigate("/TestPage");
   };
 
@@ -203,8 +206,9 @@ function App() {
       )}
 
       <Routes>
-        <Route path="/login" element={<LoginPage onLoginSuccess={handleLoginSuccess} />} />
+        <Route path="/login" element={<LoginPage key={isLoggedIn ? "logged-in" : "logged-out"} onLoginSuccess={handleLoginSuccess} />} />
         <Route path="/adminDashboard" element={<ProtectedRoute isLoggedIn={isLoggedIn && role === "admin"}><AdminDashboard /></ProtectedRoute>} />
+        <Route path="/superAdminDashboard" element={<ProtectedRoute isLoggedIn={isLoggedIn && role === "superadmin"}><SuperAdminDashboard /></ProtectedRoute>}/>
         <Route path="/" element={<ProtectedRoute isLoggedIn={isLoggedIn}><><HeroSection /><FeaturesSection /><CoursesSection /><LearningPathSection /><TestimonialsSection /><SocialSidebar /><CallToAction /></></ProtectedRoute>} />
         <Route path="/icjs" element={<ProtectedRoute isLoggedIn={isLoggedIn}><ICJSTraining /></ProtectedRoute>} />
         <Route path="/cctns" element={<ProtectedRoute isLoggedIn={isLoggedIn}><CCTNSTraining /></ProtectedRoute>} />
