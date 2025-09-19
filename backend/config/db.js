@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 dotenv.config();
 const { Pool } = pkg;
 
+
 export const pool = new Pool({
   host: process.env.PG_HOST || "localhost",
   port: process.env.PG_PORT || 5432,

@@ -15,6 +15,8 @@ import {
 } from "recharts";
 
 import { saveAs } from "file-saver";
+const API_BASE = "http://localhost:5000/api";
+const token = localStorage.getItem("authToken");
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -78,26 +80,26 @@ const trendDataCompleted = [
 ];
 
 
-  // User Management
-  const [searchKey, setSearchKey] = useState("");
-  const [userDetails, setUserDetails] = useState(null);
-  const [newUser, setNewUser] = useState({ name: "", rank: "", beltNo: "", mobile: "", email: "", ps: "", district: "", role: "user" });
-  const [userAchievements, setUserAchievements] = useState([]);
+  // // User Management
+  // const [searchKey, setSearchKey] = useState("");
+  // const [userDetails, setUserDetails] = useState(null);
+  // const [newUser, setNewUser] = useState({ name: "", rank: "", beltNo: "", mobile: "", email: "", ps: "", district: "", role: "user" });
+  // const [userAchievements, setUserAchievements] = useState([]);
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  // useEffect(() => {
+  //   fetchData();
+  // }, []);
 
-  const fetchData = async () => {
-    const [uRes, cRes, aRes] = await Promise.all([
-      axios.get("/api/admin/users"),
-      axios.get("/api/courses"),
-      axios.get("/api/admin/assessments"),
-    ]);
-    setUsers(uRes.data);
-    setCourses(cRes.data);
-    setAssessments(aRes.data);
-  };
+  // const fetchData = async () => {
+  //   const [uRes, cRes, aRes] = await Promise.all([
+  //     axios.get("/api/admin/users"),
+  //     axios.get("/api/courses"),
+  //     axios.get("/api/admin/assessments"),
+  //   ]);
+  //   setUsers(uRes.data);
+  //   setCourses(cRes.data);
+  //   setAssessments(aRes.data);
+  // };
 
   // Dashboard metrics
   useEffect(() => {
@@ -149,34 +151,124 @@ const trendDataCompleted = [
     saveAs(blob, "assessments_report.csv");
   };
 
+    // User Management
+
+  const [searchKey, setSearchKey] = useState("");
+  const [userDetails, setUserDetails] = useState(null);
+  const [newUser, setNewUser] = useState({
+    name: "",
+    rank: "",
+    belt: "",
+    mobile: "",
+    email: "",
+    policeStation: "",
+    district: "",
+    username: "",
+    password: "",
+    role: "user",
+  });
+  const [userAchievements, setUserAchievements] = useState([]);
+
+  // ---- Fetch Data ----
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      const [uRes, cRes] = await Promise.all([
+        axios.get(`${API_BASE}/auth/users`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+        axios.get(`${API_BASE}/courses`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+      ]);
+      setUsers(uRes.data);
+      setCourses(cRes.data);
+      // Assessments can be wired when backend endpoint ready
+      setAssessments([]);
+    } catch (err) {
+      console.error("❌ Fetch failed:", err);
+    }
+  };
+
+  // Dashboard metrics
+  useEffect(() => {
+    setTotalUsers(users.length);
+    setTotalCourses(courses.length);
+    setTotalAssigned(assessments.length);
+    setTotalCompleted(
+      assessments.filter((a) => a.status === "completed").length
+    );
+  }, [users, courses, assessments]);
+
   // USER MANAGEMENT HANDLERS
   const handleAddUser = async () => {
-    await axios.post("/api/admin/users", newUser);
-    alert("User added successfully!");
-    setNewUser({ name: "", rank: "", beltNo: "", mobile: "", email: "", ps: "", district: "", role: "user" });
-    fetchData();
+    try {
+      const res = await axios.post(`${API_BASE}/auth/register`, newUser, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      alert("✅ User added successfully!");
+      setUsers((prev) => [res.data.user, ...prev]);
+      setNewUser({
+        name: "",
+        rank: "",
+        belt: "",
+        mobile: "",
+        email: "",
+        policeStation: "",
+        district: "",
+        username: "",
+        password: "",
+        role: "user",
+      });
+    } catch (err) {
+      alert("❌ Failed to add user: " + err.response?.data?.message);
+    }
   };
 
   const handleFetchUser = async () => {
     if (!searchKey) return;
-    const res = await axios.get(`/api/admin/users/${searchKey}`);
-    setUserDetails(res.data);
+    const found = users.find(
+      (u) =>
+        u.mobile === searchKey ||
+        u.belt === searchKey ||
+        u.email === searchKey
+    );
+    setUserDetails(found || null);
   };
 
   const handleDeleteUser = async () => {
     if (!userDetails) return;
-    await axios.delete(`/api/admin/users/${userDetails.id}`);
-    alert("User deleted!");
-    setUserDetails(null);
-    fetchData();
+    try {
+      await axios.delete(`${API_BASE}/auth/users/${userDetails.id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      alert("🗑️ User deleted!");
+      setUsers((prev) => prev.filter((u) => u.id !== userDetails.id));
+      setUserDetails(null);
+    } catch (err) {
+      alert("❌ Delete failed: " + err.response?.data?.message);
+    }
   };
 
   const handleUpdateUser = async () => {
     if (!userDetails) return;
-    await axios.put(`/api/admin/users/${userDetails.id}`, userDetails);
-    alert("User updated!");
-    setUserDetails(null);
-    fetchData();
+    try {
+      const res = await axios.put(
+        `${API_BASE}/auth/users/${userDetails.id}`,
+        userDetails,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      alert("✅ User updated!");
+      setUsers((prev) =>
+        prev.map((u) => (u.id === userDetails.id ? res.data.user : u))
+      );
+      setUserDetails(null);
+    } catch (err) {
+      alert("❌ Update failed: " + err.response?.data?.message);
+    }
   };
 
   const handleUpdateRole = async (id, role) => {
@@ -297,7 +389,9 @@ const trendDataCompleted = [
                 <button
                   key={tab}
                   className={`px-4 py-2 rounded-lg font-medium ${
-                    userSubTab === tab ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-700"
+                    userSubTab === tab
+                      ? "bg-blue-600 text-white"
+                      : "bg-gray-200 text-gray-700"
                   }`}
                   onClick={() => {
                     setUserSubTab(tab);
@@ -309,91 +403,218 @@ const trendDataCompleted = [
               ))}
             </div>
 
-            {/* Add / Remove / Update / Achievements */}
+            {/* Add User */}
             {userSubTab === "Add" && (
               <div className="bg-white p-6 rounded-lg shadow">
                 <h3 className="font-semibold mb-4">Add New User</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {["name","rank","beltNo","mobile","email","ps","district"].map(field => (
-                    <input key={field} type="text" placeholder={field.charAt(0).toUpperCase()+field.slice(1)} className="border p-2 rounded" value={newUser[field]} onChange={e => setNewUser({...newUser,[field]: e.target.value})} />
+                  {[
+                    "name",
+                    "rank",
+                    "belt",
+                    "mobile",
+                    "email",
+                    "policeStation",
+                    "district",
+                    "username",
+                    "password",
+                  ].map((field) => (
+                    <input
+                      key={field}
+                      type={field === "password" ? "password" : "text"}
+                      placeholder={field}
+                      className="border p-2 rounded"
+                      value={newUser[field]}
+                      onChange={(e) =>
+                        setNewUser({ ...newUser, [field]: e.target.value })
+                      }
+                    />
                   ))}
-                  <select className="border p-2 rounded" value={newUser.role} onChange={e => setNewUser({...newUser,role:e.target.value})}>
+                  <select
+                    className="border p-2 rounded"
+                    value={newUser.role}
+                    onChange={(e) =>
+                      setNewUser({ ...newUser, role: e.target.value })
+                    }
+                  >
                     <option value="user">User</option>
                     <option value="admin">Admin</option>
                   </select>
                 </div>
-                <button className="mt-4 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg" onClick={handleAddUser}>Add User</button>
+                <button
+                  className="mt-4 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg"
+                  onClick={handleAddUser}
+                >
+                  Add User
+                </button>
               </div>
             )}
 
+            {/* Remove User */}
             {userSubTab === "Remove" && (
               <div className="bg-white p-6 rounded-lg shadow">
                 <h3 className="font-semibold mb-4">Remove User</h3>
                 <div className="flex gap-2 mb-4">
-                  <input type="text" placeholder="Belt No. or Mobile" className="border p-2 rounded flex-1" value={searchKey} onChange={e => setSearchKey(e.target.value)} />
-                  <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg" onClick={handleFetchUser}>Fetch</button>
+                  <input
+                    type="text"
+                    placeholder="Email, Mobile, or Belt"
+                    className="border p-2 rounded flex-1"
+                    value={searchKey}
+                    onChange={(e) => setSearchKey(e.target.value)}
+                  />
+                  <button
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
+                    onClick={handleFetchUser}
+                  >
+                    Fetch
+                  </button>
                 </div>
                 {userDetails && (
                   <div className="border p-4 rounded-lg">
-                    {["name","rank","beltNo","mobile","email","ps","district"].map(field => (
-                      <p key={field}><strong>{field.charAt(0).toUpperCase()+field.slice(1)}:</strong> {userDetails[field]}</p>
-                    ))}
-                    <p><strong>Role:</strong> 
-                      <select className="ml-2 border p-1 rounded" value={userDetails.role} onChange={e => handleUpdateRole(userDetails.id,e.target.value)}>
-                        <option value="user">User</option>
-                        <option value="admin">Admin</option>
-                        <option value="superadmin">Super Admin</option>
-                      </select>
+                    <p>
+                      <strong>Name:</strong> {userDetails.name}
                     </p>
-                    <button className="mt-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg" onClick={handleDeleteUser}>Delete User</button>
+                    <p>
+                      <strong>Rank:</strong> {userDetails.rank}
+                    </p>
+                    <p>
+                      <strong>Email:</strong> {userDetails.email}
+                    </p>
+                    <p>
+                      <strong>Mobile:</strong> {userDetails.mobile}
+                    </p>
+                    <button
+                      className="mt-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg"
+                      onClick={handleDeleteUser}
+                    >
+                      Delete User
+                    </button>
                   </div>
                 )}
               </div>
             )}
 
+            {/* Update User */}
             {userSubTab === "Update" && (
               <div className="bg-white p-6 rounded-lg shadow">
                 <h3 className="font-semibold mb-4">Update User</h3>
                 <div className="flex gap-2 mb-4">
-                  <input type="text" placeholder="Belt No. or Mobile" className="border p-2 rounded flex-1" value={searchKey} onChange={e => setSearchKey(e.target.value)} />
-                  <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg" onClick={handleFetchUser}>Fetch</button>
+                  <input
+                    type="text"
+                    placeholder="Email, Mobile, or Belt"
+                    className="border p-2 rounded flex-1"
+                    value={searchKey}
+                    onChange={(e) => setSearchKey(e.target.value)}
+                  />
+                  <button
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
+                    onClick={handleFetchUser}
+                  >
+                    Fetch
+                  </button>
                 </div>
                 {userDetails && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {["name","rank","beltNo","mobile","email","ps","district"].map(field => (
-                      <input key={field} type="text" placeholder={field.charAt(0).toUpperCase()+field.slice(1)} className="border p-2 rounded" value={userDetails[field]} onChange={e => setUserDetails({...userDetails,[field]:e.target.value})} />
+                    {[
+                      "name",
+                      "rank",
+                      "belt",
+                      "mobile",
+                      "email",
+                      "policeStation",
+                      "district",
+                      "username",
+                    ].map((field) => (
+                      <input
+                        key={field}
+                        type="text"
+                        placeholder={field}
+                        className="border p-2 rounded"
+                        value={userDetails[field] || ""}
+                        onChange={(e) =>
+                          setUserDetails({
+                            ...userDetails,
+                            [field]: e.target.value,
+                          })
+                        }
+                      />
                     ))}
-                    <select className="border p-2 rounded" value={userDetails.role} onChange={e => setUserDetails({...userDetails,role:e.target.value})}>
+                    <select
+                      className="border p-2 rounded"
+                      value={userDetails.role}
+                      onChange={(e) =>
+                        setUserDetails({
+                          ...userDetails,
+                          role: e.target.value,
+                        })
+                      }
+                    >
                       <option value="user">User</option>
                       <option value="admin">Admin</option>
                       <option value="superadmin">Super Admin</option>
                     </select>
-                    <button className="col-span-full mt-2 bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg" onClick={handleUpdateUser}>Update User</button>
                   </div>
+                )}
+                {userDetails && (
+                  <button
+                    className="mt-4 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg"
+                    onClick={handleUpdateUser}
+                  >
+                    Update User
+                  </button>
                 )}
               </div>
             )}
 
+            {/* Achievements */}
             {userSubTab === "Achievements" && (
               <div className="bg-white p-6 rounded-lg shadow">
                 <h3 className="font-semibold mb-4">User Achievements</h3>
                 <div className="flex gap-2 mb-4">
-                  <input type="text" placeholder="Belt No. or Mobile" className="border p-2 rounded flex-1" value={searchKey} onChange={e => setSearchKey(e.target.value)} />
-                  <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg" onClick={handleFetchAchievements}>Fetch</button>
+                  <input
+                    type="text"
+                    placeholder="Belt, Mobile, or Email"
+                    className="border p-2 rounded flex-1"
+                    value={searchKey}
+                    onChange={(e) => setSearchKey(e.target.value)}
+                  />
+                  <button
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
+                    onClick={handleFetchAchievements}
+                  >
+                    Fetch
+                  </button>
                 </div>
-                {userAchievements && userAchievements.length > 0 && (
+                {userAchievements.length > 0 && (
                   <div className="overflow-x-auto">
                     <table className="w-full border-collapse">
                       <thead>
-                        <tr className="bg-gray-100"><th className="p-2 border">Course</th><th className="p-2 border">Score</th><th className="p-2 border">Certificate</th><th className="p-2 border">Download</th></tr>
+                        <tr className="bg-gray-100">
+                          <th className="p-2 border">Course</th>
+                          <th className="p-2 border">Score</th>
+                          <th className="p-2 border">Certificate</th>
+                          <th className="p-2 border">Download</th>
+                        </tr>
                       </thead>
                       <tbody>
-                        {userAchievements.map(a => (
+                        {userAchievements.map((a) => (
                           <tr key={a.id} className="hover:bg-gray-50">
                             <td className="p-2 border">{a.course_name}</td>
                             <td className="p-2 border">{a.score}</td>
-                            <td className="p-2 border">{a.certificate ? "Generated" : "Pending"}</td>
-                            <td className="p-2 border">{a.certificate && <a href={a.certificate} download className="text-blue-600 hover:underline">Download</a>}</td>
+                            <td className="p-2 border">
+                              {a.certificate ? "Generated" : "Pending"}
+                            </td>
+                            <td className="p-2 border">
+                              {a.certificate && (
+                                <a
+                                  href={a.certificate}
+                                  download
+                                  className="text-blue-600 hover:underline"
+                                >
+                                  Download
+                                </a>
+                              )}
+                            </td>
                           </tr>
                         ))}
                       </tbody>

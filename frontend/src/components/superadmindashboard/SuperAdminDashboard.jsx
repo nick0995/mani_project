@@ -40,7 +40,6 @@ import {
   Legend,
 } from "recharts";
 
-import { API_BASE } from "../../config";
 
 // shadcn/ui components (assumes you have them set up in your project)
 import { Button } from "./ui/button";
@@ -53,6 +52,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "./ui/dialog";
 import { Label } from "./ui/label";
 import { Switch } from "./ui/switch";
+export const API_BASE = "http://localhost:5000/api";
+const token = localStorage.getItem("authToken");
 
 // Utility helpers
 const uid = () => Math.random().toString(36).slice(2, 10);
@@ -102,25 +103,31 @@ export default function SuperAdminDashboard() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
 
+
   useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const token = localStorage.getItem("authToken");
-        const res = await fetch(`${API_BASE}/auth/users`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.message);
-        setUsers(data);
-      } catch (err) {
-        console.error("Fetch users error:", err);
-        alert("Failed to fetch users: " + err.message);
-      } finally {
-        setLoading(false);
+  const fetchUsers = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/auth/users`, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`, // must include token
+        },
+      });
+
+      if (!res.ok) {
+        const text = await res.text(); // backend might return JSON or plain text
+        throw new Error(`HTTP ${res.status}: ${text}`);
       }
-    };
-    fetchUsers();
-  }, []);
+
+      const data = await res.json();
+      setUsers(data);
+    } catch (error) {
+      console.error("❌ Failed to fetch users:", error.message);
+    }
+  };
+
+  fetchUsers();
+}, [token]);
 
   const pushNote = (type, message) =>
     setNotifications((prev) => [
@@ -249,6 +256,7 @@ export default function SuperAdminDashboard() {
       name: "", rank: "", belt: "", mobile: "", email: "",
       policeStation: "", district: "", username: "", password: "", role: "User"
     });
+    
 
     const onSubmit = async (e) => {
       e.preventDefault();
@@ -289,7 +297,7 @@ export default function SuperAdminDashboard() {
             <Input required type="email" placeholder="Email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
             <Input required placeholder="Police Station" value={form.policeStation} onChange={(e) => setForm({ ...form, policeStation: e.target.value })} />
             <Input required placeholder="District" value={form.district} onChange={(e) => setForm({ ...form, district: e.target.value })} />
-            <Input required placeholder="Username" value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} />
+            
             <Input required type="password" placeholder="Password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
             <Select value={form.role} onValueChange={(v) => setForm({ ...form, role: v })}>
               <SelectTrigger><SelectValue placeholder="Select Role" /></SelectTrigger>
@@ -306,18 +314,17 @@ export default function SuperAdminDashboard() {
       </Card>
     );
   }
-
 function FindUser({ users = [], onSelect, label = "Find" }) {
   const [key, setKey] = useState("");
 
-  // Compute found user from search key
-  const found = useMemo(
-    () =>
-      users.find(
-        (u) => u.email === key || u.mobile === key || u.belt === key
-      ),
-    [key, users]
+ const found = useMemo(() => {
+  const cleanKey = key.trim().toLowerCase();
+  return users.find((u) => 
+    (u.email && u.email.toLowerCase() === cleanKey) || 
+    (u.mobile && u.mobile.toLowerCase() === cleanKey) || 
+    (u.belt && u.belt.toLowerCase() === cleanKey)
   );
+}, [key, users]);
 
   return (
     <div className="grid md:grid-cols-5 gap-3 items-center">
@@ -351,24 +358,26 @@ function FindUser({ users = [], onSelect, label = "Find" }) {
   const [target, setTarget] = useState(null);
 
   const onDelete = async () => {
-    if (!target) return;
-    try {
-      const token = localStorage.getItem("authToken");
-      const res = await fetch(`${API_BASE}/auth/users/${target.id}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message);
+  if (!target) return;
+  try {
+    const token = localStorage.getItem("authToken");
+    const res = await fetch(`${API_BASE}/auth/users/${target.id}`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message);
 
-      setUsers((prev) => prev.filter((u) => u.id !== target.id));
-      pushNote("user_deleted", `User ${target.name} deleted`);
-      setTarget(null);
-    } catch (err) {
-      alert("Delete failed: " + err.message);
-    }
-  };
-
+    setUsers((prev) => prev.filter((u) => u.id !== target.id));
+    pushNote("user_deleted", `User ${target.name} deleted`);
+    setTarget(null);
+  } catch (err) {
+    alert("Delete failed: " + err.message);
+  }
+};
   return (
     <Section title="Remove User" icon={UserX} actions={
       <Dialog>
@@ -386,20 +395,19 @@ function FindUser({ users = [], onSelect, label = "Find" }) {
       </Dialog>
     }>
       <FindUser users={users} onSelect={setTarget} label="Load" />
-
-      {target && (
-        <div className="mt-4 grid grid-cols-1 md:grid-cols-5 gap-3 text-sm">
-          <div><Label className="text-gray-400">Name</Label><div className="text-white">{target.name}</div></div>
-          <div><Label className="text-gray-400">Rank</Label><div className="text-white">{target.rank}</div></div>
-          <div><Label className="text-gray-400">Belt</Label><div className="text-white">{target.belt}</div></div>
-          <div><Label className="text-gray-400">Mobile</Label><div className="text-white">{target.mobile}</div></div>
-          <div><Label className="text-gray-400">Email</Label><div className="text-white">{target.email}</div></div>
-          <div><Label className="text-gray-400">Police Station</Label><div className="text-white">{target.police_station || target.policeStation}</div></div>
-          <div><Label className="text-gray-400">District</Label><div className="text-white">{target.district}</div></div>
-          <div><Label className="text-gray-400">Username</Label><div className="text-white">{target.username}</div></div>
-          <div><Label className="text-gray-400">Role</Label><div className="text-white">{target.role}</div></div>
-        </div>
-      )}
+{target && (
+  <div className="mt-4 grid grid-cols-1 md:grid-cols-5 gap-3 text-sm">
+    <div><Label className="text-gray-400">Name</Label><div className="text-white">{target.name}</div></div>
+    <div><Label className="text-gray-400">Rank</Label><div className="text-white">{target.rank}</div></div>
+    <div><Label className="text-gray-400">Belt</Label><div className="text-white">{target.belt}</div></div>
+    <div><Label className="text-gray-400">Mobile</Label><div className="text-white">{target.mobile}</div></div>
+    <div><Label className="text-gray-400">Email</Label><div className="text-white">{target.email}</div></div>
+    <div><Label className="text-gray-400">Police Station</Label><div className="text-white">{target.police_station || target.policeStation}</div></div>
+    <div><Label className="text-gray-400">District</Label><div className="text-white">{target.district}</div></div>
+    <div><Label className="text-gray-400">Username</Label><div className="text-white">{target.username}</div></div>
+    <div><Label className="text-gray-400">Role</Label><div className="text-white">{target.role}</div></div>
+  </div>
+)}
     </Section>
   );
 }
@@ -412,54 +420,53 @@ function FindUser({ users = [], onSelect, label = "Find" }) {
     role: "User",
   });
 
-  const load = (u) => {
-    setTarget(u);
-    setForm({
-      name: u.name,
-      rank: u.rank,
-      belt: u.belt || "",
-      mobile: u.mobile,
-      email: u.email,
-      policeStation: u.police_station || u.policeStation,
-      district: u.district,
-      username: u.username,
-      password: "",
-      role: u.role,
-    });
-  };
+ const load = (u) => {
+  setTarget(u);
+  setForm({
+    name: u.name,
+    rank: u.rank,
+    belt: u.belt || "",
+    mobile: u.mobile,
+    email: u.email,
+    policeStation: u.police_station || u.policeStation, // Handle both cases
+    district: u.district,
+    username: u.username,
+    password: "",
+    role: u.role,
+  });
+};
 
   const onSave = async () => {
-    if (!target) return;
-    try {
-      const token = localStorage.getItem("authToken");
-      const res = await fetch(`${API_BASE}/auth/users/${target.id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          ...form,
-          policeStation: form.policeStation
-        }),
-      });
+  if (!target) return;
+  try {
+    const token = localStorage.getItem("authToken");
+    const res = await fetch(`${API_BASE}/auth/users/${target.id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        ...form,
+        policeStation: form.policeStation
+      }),
+    });
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message);
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message);
 
-      setUsers((prev) => prev.map((u) => (u.id === target.id ? data.user : u)));
-      pushNote("user_updated", `User ${form.name} updated`);
-      setTarget(null);
-    } catch (err) {
-      alert("Update failed: " + err.message);
-    }
-  };
-
+    setUsers((prev) => prev.map((u) => (u.id === target.id ? data.user : u)));
+    pushNote("user_updated", `User ${form.name} updated`);
+    setTarget(null);
+  } catch (err) {
+    alert("Update failed: " + err.message);
+  }
+};
   return (
     <Section title="Update User" icon={UserCog} actions={<Button onClick={onSave} disabled={!target}>Save Changes</Button>}>
       <FindUser users={users} onSelect={load} label="Load" />
 
-      <div className="grid md:grid-cols-5 gap-3 mt-4">
+      <div className="grid md:grid-cols-5 gap-3 mt-4 bg-none">
         <Input placeholder="Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
         <Input placeholder="Rank" value={form.rank} onChange={(e) => setForm({ ...form, rank: e.target.value })} />
         <Input placeholder="Belt" value={form.belt} onChange={(e) => setForm({ ...form, belt: e.target.value })} />
@@ -540,53 +547,208 @@ function FindUser({ users = [], onSelect, label = "Find" }) {
     );
   }
 
-  // ------- COURSE MANAGEMENT -------
-  function FeatureCourse() {
-    const [form, setForm] = useState({ name: "", category: "", description: "", image: null, preview: null });
-    const onSubmit = (e) => {
-      e.preventDefault();
-      const newC = { id: uid(), name: form.name, category: form.category, description: form.description, image: form.preview };
-      setFeaturedCourses(prev => [newC, ...prev]);
-      setCourses(prev => [...prev, { id: newC.id, name: newC.name, category: newC.category, description: newC.description }]);
-      setForm({ name: "", category: "", description: "", image: null, preview: null });
-    };
-    return (
-      <Section title="Add Featured Course" icon={BookOpen}>
-        <form onSubmit={onSubmit} className="grid md:grid-cols-4 gap-3">
-          <Input required placeholder="Course name" value={form.name} onChange={e=>setForm({...form, name:e.target.value})} className="bg-gray-700 border-gray-600 text-white" />
-          <Input required placeholder="Course category" value={form.category} onChange={e=>setForm({...form, category:e.target.value})} className="bg-gray-700 border-gray-600 text-white" />
-          <Textarea required placeholder="Course description" className="md:col-span-2 bg-gray-700 border-gray-600 text-white" value={form.description} onChange={e=>setForm({...form, description:e.target.value})}/>
-          <div className="flex items-center gap-2">
-            <Label className="w-full">
-              <div className="flex items-center justify-between border border-gray-600 rounded-xl p-2 cursor-pointer bg-gray-700 text-gray-300">
-                <div className="flex items-center gap-2"><ImageIcon className="w-4 h-4"/> Upload image (600×400)</div>
-                <Upload className="w-4 h-4" />
+ // ------- COURSE MANAGEMENT -------
+function FeatureCourse() {
+  const [form, setForm] = useState({
+    id: null,
+    name: "",
+    category: "",
+    description: "",
+    image: null,
+    preview: null,
+  });
+  const [isEditing, setIsEditing] = useState(false);
+
+  // --- Submit handler (Add or Update) ---
+  const onSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const token = localStorage.getItem("authToken");
+      const formData = new FormData();
+      formData.append("title", form.name);
+      formData.append("category", form.category);
+      formData.append("description", form.description);
+      formData.append("duration", "1 Week");
+      if (form.image) formData.append("img", form.image);
+
+      const url = isEditing
+        ? `${API_BASE}/courses/${form.id}`
+        : `${API_BASE}/courses`;
+      const method = isEditing ? "PUT" : "POST";
+
+      const res = await fetch(url, {
+        method,
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message);
+
+      if (isEditing) {
+        // update in local state
+        setCourses((prev) =>
+          prev.map((c) => (c.id === data.course.id ? data.course : c))
+        );
+        setFeaturedCourses((prev) =>
+          prev.map((c) => (c.id === data.course.id ? data.course : c))
+        );
+        setIsEditing(false);
+      } else {
+        // add new
+        setCourses((prev) => [...prev, data.course]);
+        setFeaturedCourses((prev) => [data.course, ...prev]);
+      }
+
+      // reset form
+      setForm({ id: null, name: "", category: "", description: "", image: null, preview: null });
+    } catch (err) {
+      alert("Failed to save course: " + err.message);
+    }
+  };
+
+  // --- Delete course ---
+  const handleDelete = async (courseId) => {
+    if (!window.confirm("Are you sure you want to delete this course?")) return;
+    try {
+      const token = localStorage.getItem("authToken");
+      const res = await fetch(`${API_BASE}/courses/${courseId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message);
+
+      setCourses((prev) => prev.filter((c) => c.id !== courseId));
+      setFeaturedCourses((prev) => prev.filter((c) => c.id !== courseId));
+    } catch (err) {
+      alert("Delete failed: " + err.message);
+    }
+  };
+
+  // --- Start editing ---
+  const handleEdit = (course) => {
+    setForm({
+      id: course.id,
+      name: course.title || course.name,
+      category: course.category,
+      description: course.description,
+      image: null,
+      preview: course.img
+        ? `http://localhost:5000/public/images/${course.img}`
+        : null,
+    });
+    setIsEditing(true);
+  };
+
+  return (
+    <Section title="Add Featured Course" icon={BookOpen}>
+      {/* Form */}
+      <form onSubmit={onSubmit} className="grid md:grid-cols-4 gap-3">
+        <Input
+          required
+          placeholder="Course name"
+          value={form.name}
+          onChange={(e) => setForm({ ...form, name: e.target.value })}
+          className="bg-gray-700 border-gray-600 text-white"
+        />
+        <Input
+          required
+          placeholder="Course category"
+          value={form.category}
+          onChange={(e) => setForm({ ...form, category: e.target.value })}
+          className="bg-gray-700 border-gray-600 text-white"
+        />
+        <Textarea
+          required
+          placeholder="Course description"
+          className="md:col-span-2 bg-gray-700 border-gray-600 text-white"
+          value={form.description}
+          onChange={(e) => setForm({ ...form, description: e.target.value })}
+        />
+        <div className="flex items-center gap-2">
+          <Label className="w-full">
+            <div className="flex items-center justify-between border border-gray-600 rounded-xl p-2 cursor-pointer bg-gray-700 text-gray-300">
+              <div className="flex items-center gap-2">
+                <ImageIcon className="w-4 h-4" /> Upload image (600×400)
               </div>
-              <input type="file" accept="image/*" className="hidden" onChange={(e)=>{
+              <Upload className="w-4 h-4" />
+            </div>
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
                 const file = e.target.files?.[0];
-                setForm({...form, image: file || null, preview: fileToURL(file)});
-              }}/>
-            </Label>
-          </div>
-          <div className="md:col-span-4 flex justify-end"><Button type="submit">Add Course</Button></div>
-        </form>
-        {featuredCourses.length>0 && (
-          <div className="grid md:grid-cols-3 gap-4 mt-4">
-            {featuredCourses.map(fc => (
-              <Card key={fc.id} className="overflow-hidden rounded-2xl bg-gray-800 border-gray-700">
-                {fc.image && <img src={fc.image} alt={fc.name} className="w-full h-40 object-cover" />}
-                <CardHeader><CardTitle className="text-lg text-white">{fc.name}</CardTitle></CardHeader>
-                <CardContent>
-                  <Badge className="bg-gray-700 text-white">{fc.category}</Badge>
-                  <p className="text-sm mt-2 text-gray-400">{fc.description}</p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
-      </Section>
-    );
-  }
+                setForm({
+                  ...form,
+                  image: file || null,
+                  preview: file ? URL.createObjectURL(file) : form.preview,
+                });
+              }}
+            />
+          </Label>
+        </div>
+        <div className="md:col-span-4 flex justify-end gap-2">
+          {isEditing && (
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => {
+                setIsEditing(false);
+                setForm({ id: null, name: "", category: "", description: "", image: null, preview: null });
+              }}
+            >
+              Cancel
+            </Button>
+          )}
+          <Button type="submit">{isEditing ? "Update Course" : "Add Course"}</Button>
+        </div>
+      </form>
+
+      {/* Course cards */}
+      {featuredCourses.length > 0 && (
+        <div className="grid md:grid-cols-3 gap-4 mt-4">
+          {featuredCourses.map((fc) => (
+            <Card key={fc.id} className="overflow-hidden rounded-2xl bg-gray-800 border-gray-700">
+              {/* Image */}
+              {fc.preview ? (
+                <img src={fc.preview} alt={fc.title} className="w-full h-40 object-cover" />
+              ) : fc.img ? (
+                <img
+                  src={`http://localhost:5000/public/images/${fc.img}`}
+                  alt={fc.title}
+                  className="w-full h-40 object-cover"
+                />
+              ) : null}
+
+              <CardHeader>
+                <CardTitle className="text-lg text-white">{fc.title || fc.name}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Badge className="bg-gray-700 text-white">{fc.category}</Badge>
+                <p className="text-sm mt-2 text-gray-400">{fc.description}</p>
+              </CardContent>
+              <div className="flex justify-between p-3 border-t border-gray-700">
+                <Button size="sm" variant="outline" onClick={() => handleEdit(fc)}>
+                  Edit
+                </Button>
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  onClick={() => handleDelete(fc.id)}
+                >
+                  Delete
+                </Button>
+              </div>
+            </Card>
+          ))}
+        </div>
+      )}
+    </Section>
+  );
+}
+
 
   // ------- SUCCESS STORIES -------
   function SuccessStories() {
@@ -1132,8 +1294,11 @@ function FindUser({ users = [], onSelect, label = "Find" }) {
           {activeTab === "user" && (
             <div className="grid gap-6">
               <AddUser />
-              <UpdateUser />
-              <RemoveUser />
+              {/* <FindUser users={users} onSelect={(u) => console.log("Found:", u)} /> */}
+
+              <UpdateUser users={users} setUsers={setUsers} />
+
+              <RemoveUser users={users} setUsers={setUsers} />
               <UserAchievement />
             </div>
           )}

@@ -242,14 +242,13 @@ router.get("/users", requireAuth, async (req, res) => {
     return res.status(500).json({ message: "Server error" });
   }
 });
-
-/**
- * PUT /api/auth/users/:id
+/* * PUT /api/auth/users/:id
  * Update user details (SuperAdmin only)
  */
 router.put("/users/:id", requireAuth, async (req, res) => {
   try {
-    if (req.user.role !== "SuperAdmin") {
+    // Check if user is SuperAdmin
+    if (req.user.role !== "admin" && req.user.role !== "superadmin") {
       return res.status(403).json({ message: "Not authorized" });
     }
 
@@ -306,7 +305,8 @@ router.put("/users/:id", requireAuth, async (req, res) => {
  */
 router.delete("/users/:id", requireAuth, async (req, res) => {
   try {
-    if (req.user.role !== "SuperAdmin") {
+    // Check if user is SuperAdmin
+    if (req.user.role !== "superadmin") {
       return res.status(403).json({ message: "Not authorized" });
     }
 

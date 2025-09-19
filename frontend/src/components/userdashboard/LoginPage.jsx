@@ -120,6 +120,7 @@ const LoginPage = ({ onLoginSuccess }) => {
         }
 
         localStorage.setItem("token", data.token);
+        localStorage.setItem("authToken", data.token); // add this line
         localStorage.setItem("user", JSON.stringify(data.user));
 
         if (data.user.role === "superadmin") {
