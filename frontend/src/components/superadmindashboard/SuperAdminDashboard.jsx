@@ -26,6 +26,7 @@ import {
   Edit,
   Megaphone,
   LogOut,
+  ClipboardList,
 } from "lucide-react";
 import {
   LineChart,
@@ -61,11 +62,11 @@ const todayISO = () => new Date().toISOString().slice(0, 10);
 const daysBetween = (a, b) => Math.floor((new Date(a) - new Date(b)) / (1000 * 60 * 60 * 24));
 
 // Seed data
-const seedCourses = [
-  { id: "c1", name: "CCTNS Basics", category: "Police IT", description: "Foundational CCTNS training" },
-  { id: "c2", name: "ICJS Integration", category: "Police IT", description: "Advanced interoperability" },
-  { id: "c3", name: "Cyber Hygiene", category: "Cyber", description: "Cyber awareness" },
-];
+// const seedCourses = [
+//   { id: "c1", name: "CCTNS Basics", category: "Police IT", description: "Foundational CCTNS training" },
+//   { id: "c2", name: "ICJS Integration", category: "Police IT", description: "Advanced interoperability" },
+//   { id: "c3", name: "Cyber Hygiene", category: "Cyber", description: "Cyber awareness" },
+// ];
 
 const colorPalette = [
   "#2563eb",
@@ -102,7 +103,7 @@ export default function SuperAdminDashboard() {
   const navigate = useNavigate();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
-
+  const [courses, setCourses] = useState([]);
 
   useEffect(() => {
   const fetchUsers = async () => {
@@ -123,6 +124,8 @@ export default function SuperAdminDashboard() {
       setUsers(data);
     } catch (error) {
       console.error("❌ Failed to fetch users:", error.message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -143,19 +146,64 @@ export default function SuperAdminDashboard() {
   };
 
   // Global app state (mock backend)
-  const [courses, setCourses] = useState(seedCourses);
+  
   const [assessments, setAssessments] = useState([]);
 
-  // Initialize assessments after users are loaded
+  // Fetch real courses from backend
+useEffect(() => {
+  const fetchCourses = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/courses`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) {
+        console.warn("Could not fetch courses, using seed data");
+        return;
+      }
+      const response = await res.json();
+      console.log("Raw API response:", response); // Debug log
+      
+      // Backend returns { success: true, data: [...courses] }
+      const data = response.data || response; // Handle both response formats
+      console.log("Courses data:", data); // Debug log
+      
+      // Normalize: backend returns { id, title } but also set name for compatibility
+      const normalized = data.map((c) => ({
+        id: c.id?.toString() ?? c.id,
+        name: c.title ?? c.name, // Use title as primary, fallback to name
+        title: c.title ?? c.name, // Also keep title for consistency
+        category: c.category,
+        description: c.description,
+        img: c.img, // Include image path
+        duration: c.duration,
+        ...c, // Include all other properties
+      }));
+      
+      console.log("Normalized courses:", normalized); // Debug log
+      console.log("Setting courses state with", normalized.length, "courses"); // Debug log
+      setCourses(normalized);
+      
+      // Also update featured courses if they exist
+      setFeaturedCourses(normalized);
+    } catch (err) {
+      console.error("Failed to fetch courses:", err);
+    }
+  };
+  fetchCourses();
+}, [token]); // Add token dependency
+
+
+
+
+  // Initialize assessments after users are loaded (local placeholder)
   useEffect(() => {
-    if (users.length > 0) {
-      setAssessments([
-        { id: uid(), userId: users[0]?.id, courseId: "c1", score: 86, passed: true, date: todayISO(), certificateUrl: "" },
-        { id: uid(), userId: users[0]?.id, courseId: "c2", score: 58, passed: false, date: todayISO(), certificateUrl: "" },
-        { id: uid(), userId: users[1]?.id, courseId: "c1", score: 92, passed: true, date: todayISO(), certificateUrl: "" },
+    if (users.length > 0 && assessments.length === 0) {
+      setAssessments((prev) => [
+        ...prev,
+        { id: uid(), userId: users[0]?.id, courseId: courses[0]?.id ?? "c1", score: 86, passed: true, date: todayISO(), certificateUrl: "" },
       ]);
     }
-  }, [users]);
+  }, [users, courses]);
 
   // Featured courses content (images)
   const [featuredCourses, setFeaturedCourses] = useState([]);
@@ -286,8 +334,12 @@ export default function SuperAdminDashboard() {
     };
 
     return (
-      <Card className="rounded-2xl bg-gray-800 border-gray-700">
-        <CardHeader><CardTitle className="text-white">Add User</CardTitle></CardHeader>
+      <Card className="rounded-2xl bg-gray-800 border-gray-700 z-2">
+       <CardHeader>
+  <CardTitle className="flex items-center gap-2 text-white pl-2">
+    <UserPlus className="w-5 h-5 text-yellow-400" /> Add User
+  </CardTitle>
+</CardHeader>
         <CardContent>
           <form onSubmit={onSubmit} className="grid md:grid-cols-4 gap-3">
             <Input required placeholder="Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
@@ -308,7 +360,7 @@ export default function SuperAdminDashboard() {
                 <SelectItem value="User">User</SelectItem>
               </SelectContent>
             </Select>
-            <div className="md:col-span-4 flex justify-end"><Button type="submit">Create</Button></div>
+            <div className="md:col-span-4 flex justify-end"><Button className="bg-gradient-to-r from-red-600 to-blue-700 text-white" type="submit">Create</Button></div>
           </form>
         </CardContent>
       </Card>
@@ -327,7 +379,7 @@ function FindUser({ users = [], onSelect, label = "Find" }) {
 }, [key, users]);
 
   return (
-    <div className="grid md:grid-cols-5 gap-3 items-center">
+    <div className="z-2 grid md:grid-cols-5 gap-3 items-center">
       <Input
         placeholder="Enter Email, Mobile or Belt No."
         value={key}
@@ -335,7 +387,7 @@ function FindUser({ users = [], onSelect, label = "Find" }) {
         className="bg-gray-700 border-gray-600 text-white"
       />
       <div className="md:col-span-4 flex items-center gap-2">
-        <Button
+        <Button className="z-2 bg-gradient-to-r from-red-600 to-blue-700 text-white"
           type="button"
           variant="secondary"
           onClick={() => onSelect && found && onSelect(found)}
@@ -382,7 +434,7 @@ function FindUser({ users = [], onSelect, label = "Find" }) {
     <Section title="Remove User" icon={UserX} actions={
       <Dialog>
         <DialogTrigger asChild>
-          <Button variant="destructive" disabled={!target}>Delete</Button>
+          <Button className="z-2 bg-gradient-to-r from-red-600 to-blue-700 text-white" variant="destructive" disabled={!target}>Delete</Button>
         </DialogTrigger>
         <DialogContent className="bg-gray-800 border-gray-700 text-white">
           <DialogHeader><DialogTitle>Confirm deletion</DialogTitle></DialogHeader>
@@ -463,7 +515,7 @@ function FindUser({ users = [], onSelect, label = "Find" }) {
   }
 };
   return (
-    <Section title="Update User" icon={UserCog} actions={<Button onClick={onSave} disabled={!target}>Save Changes</Button>}>
+    <Section title="Update User" icon={UserCog}    actions={<Button className="z-2 bg-gradient-to-r from-red-600 to-blue-700 text-white" onClick={onSave} disabled={!target}>Save Changes</Button>}>
       <FindUser users={users} onSelect={load} label="Load" />
 
       <div className="grid md:grid-cols-5 gap-3 mt-4 bg-none">
@@ -547,6 +599,492 @@ function FindUser({ users = [], onSelect, label = "Find" }) {
     );
   }
 
+  //
+  // ---------- UPDATED Assessment Management ----------
+  //
+  function AssessmentManagement() {
+    // form fields: id, title, description, duration (minutes), total_questions, courseId
+    const [form, setForm] = useState({ id: null, title: "", description: "", duration: 30, total_questions: 10, course_id: "" });
+    const [isEditing, setIsEditing] = useState(false);
+    const [allAssessments, setAllAssessments] = useState([]);
+    const [loadingAssessments, setLoadingAssessments] = useState(true);
+
+    // fetch assessments from backend
+    const fetchAssessments = async () => {
+      try {
+        setLoadingAssessments(true);
+        const res = await fetch(`${API_BASE}/assessments`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (!res.ok) {
+          console.warn("Failed to fetch assessments:", res.status);
+          setAllAssessments([]);
+          return;
+        }
+        const data = await res.json();
+        // ensure consistent keys: backend uses id, title, description, duration, total_questions, course_id
+        const normalized = data.map(a => ({
+          id: a.id?.toString() ?? a.id,
+          title: a.title,
+          description: a.description,
+          duration: a.duration,
+          total_questions: a.total_questions,
+          course_id: a.course_id ?? a.courseId ?? a.courseId,
+          created_by: a.created_by,
+          created_at: a.created_at,
+        }));
+        setAllAssessments(normalized);
+      } catch (err) {
+        console.error("Error fetching assessments:", err);
+      } finally {
+        setLoadingAssessments(false);
+      }
+    };
+
+    useEffect(() => {
+      fetchAssessments();
+    }, []);
+
+   // In your AssessmentManagement component, update the saveAssessment function:
+const saveAssessment = async (e) => {
+  e?.preventDefault?.();
+  try {
+    const payload = {
+      title: form.title,
+      description: form.description,
+      duration: Number(form.duration) || 30,
+      total_questions: Number(form.total_questions) || 10,
+      course_id: form.course_id,
+    };
+
+    const method = isEditing ? "PUT" : "POST";
+    const url = isEditing ? `${API_BASE}/assessments/${form.id}` : `${API_BASE}/assessments`;
+
+    const res = await fetch(url, {
+      method,
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify(payload),
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data?.message || `Status ${res.status}`);
+    }
+
+    // The backend returns { success: true, assessment: {...} }
+    console.log("Assessment saved:", data);
+
+    // Refresh the assessments list
+    await fetchAssessments();
+
+    // Reset form
+    setIsEditing(false);
+    setForm({ id: null, title: "", description: "", duration: 30, total_questions: 10, course_id: "" });
+    pushNote("assessment_saved", `Assessment "${payload.title}" ${isEditing ? "updated" : "created"}`);
+  } catch (err) {
+    console.error("Save assessment error:", err);
+    alert("Failed to save assessment: " + err.message);
+  }
+};
+
+    const editAssessment = (a) => {
+      setForm({
+        id: a.id,
+        title: a.title,
+        description: a.description || "",
+        duration: a.duration || 30,
+        total_questions: a.total_questions || 10,
+        course_id: a.course_id || a.courseId || "",
+      });
+      setIsEditing(true);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    };
+
+    const deleteAssessment = async (id) => {
+      if (!window.confirm("Delete this assessment? This will also delete related questions (if backend enforces cascade).")) return;
+      try {
+        const res = await fetch(`${API_BASE}/assessments/${id}`, {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (!res.ok) {
+          const data = await res.json();
+          throw new Error(data.message || `Status ${res.status}`);
+        }
+        // refresh list
+        await fetchAssessments();
+        pushNote("assessment_deleted", `Assessment removed`);
+      } catch (err) {
+        alert("Delete failed: " + err.message);
+      }
+    };
+
+    return (
+  <Section title="Assessment Management" icon={ClipboardList} actions={
+      <div className="flex items-center gap-2">
+        <Button className="z-2 bg-gradient-to-r from-red-600 to-blue-700 text-white" onClick={fetchAssessments}>Refresh</Button>
+      </div>
+    }>
+      <form onSubmit={saveAssessment} className="grid md:grid-cols-4 gap-3 mb-6">
+        <Input
+          required
+          placeholder="Assessment Title"
+          value={form.title}
+          onChange={e => setForm({ ...form, title: e.target.value })}
+        />
+
+        <Select
+          value={form.course_id ? String(form.course_id) : undefined}
+          onValueChange={v => setForm({ ...form, course_id: v })}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Select Course" />
+          </SelectTrigger>
+          <SelectContent>
+            {courses.length === 0 ? (
+              <SelectItem value="loading" disabled>Loading courses...</SelectItem>
+            ) : (
+              courses.map(c => (
+                <SelectItem key={c.id} value={String(c.id)}>
+                  {c.title || c.name}
+                </SelectItem>
+              ))
+            )}
+          </SelectContent>
+        </Select>
+
+          <Input
+            type="number"
+            min={1}
+            placeholder="Duration (minutes)"
+            value={form.duration}
+            onChange={e => setForm({ ...form, duration: e.target.value })}
+          />
+          <Input
+            type="number"
+            min={1}
+            placeholder="Total Questions"
+            value={form.total_questions}
+            onChange={e => setForm({ ...form, total_questions: e.target.value })}
+          />
+
+          <Textarea
+            placeholder="Description"
+            value={form.description}
+            onChange={e => setForm({ ...form, description: e.target.value })}
+            className="md:col-span-4 text-black"
+          />
+
+          <div className="md:col-span-4 flex justify-end gap-2">
+            {isEditing && (
+              <Button 
+                type="button"
+                variant="secondary"
+                onClick={() => {
+                  setIsEditing(false);
+                  setForm({
+                    id: null,
+                    title: "",
+                    description: "",
+                    duration: 30,
+                    total_questions: 10,
+                    course_id: undefined,
+                  });
+                }}
+              >
+                Cancel
+              </Button>
+            )}
+            <Button className="z-2 bg-gradient-to-r from-red-600 to-blue-700 text-white" type="submit">{isEditing ? "Update" : "Create"} Assessment</Button>
+          </div>
+</form>
+
+
+        <div className="overflow-x-auto">
+          <table className="min-w-full text-sm">
+            <thead>
+              <tr className="text-left border-b border-gray-700">
+                <th className="py-2 text-gray-400">Title</th>
+                <th className="py-2 text-gray-400">Course</th>
+                <th className="py-2 text-gray-400">Duration</th>
+                <th className="py-2 text-gray-400">Questions</th>
+                <th className="py-2 text-gray-400">Created At</th>
+                <th className="py-2 text-gray-400">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {loadingAssessments ? (
+                <tr><td colSpan={6} className="py-4 text-gray-400">Loading assessments...</td></tr>
+              ) : allAssessments.length === 0 ? (
+                <tr><td colSpan={6} className="py-4 text-gray-400">No assessments found</td></tr>
+              ) : allAssessments.map(a => (
+                <tr key={a.id} className="border-b border-gray-700">
+                  <td className="py-2 text-white">{a.title}</td>
+                  <td className="py-2 text-white">{courses.find(c => String(c.id) === String(a.course_id))?.title ?? courses.find(c=>c.id===a.course_id)?.name ?? "—"}</td>
+                  <td className="py-2 text-white">{a.duration ?? "-" } min</td>
+                  <td className="py-2 text-gray-300">{a.total_questions ?? "-"}</td>
+                  <td className="py-2 text-gray-400">{a.created_at ? new Date(a.created_at).toLocaleString() : "-"}</td>
+                  <td className="py-2 flex gap-2">
+                    <Button size="sm" variant="outline" onClick={() => editAssessment(a)}>Edit</Button>
+                    <Button size="sm" variant="destructive" onClick={() => deleteAssessment(a.id)}>Delete</Button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Section>
+    );
+  }
+
+
+  //
+  // ---------- UPDATED Assign Assessment ----------
+  //
+  function AssignAssessment() {
+  const [target, setTarget] = useState(null);
+  const [courseId, setCourseId] = useState("");
+  const [assessmentId, setAssessmentId] = useState("");
+  const [courseAssessments, setCourseAssessments] = useState([]);
+  const [assignedList, setAssignedList] = useState([]);
+  const [loadingAssigned, setLoadingAssigned] = useState(false);
+  const [allAssessments, setAllAssessments] = useState([]); // Add this state
+
+  // Add useEffect to fetch all assessments for the dropdown
+ useEffect(() => {
+    const fetchAllAssessments = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/assessments`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (!res.ok) {
+          console.warn("Could not fetch assessments", res.status);
+          setAllAssessments([]);
+          return;
+        }
+        const data = await res.json();
+        console.log("All assessments fetched:", data); // Debug log
+        setAllAssessments(data.map(a => ({
+          id: a.id?.toString() ?? a.id,
+          title: a.title,
+          course_id: a.course_id
+        })));
+      } catch (err) {
+        console.error("Fetch all assessments error:", err);
+        setAllAssessments([]);
+      }
+    };
+    fetchAllAssessments();
+  }, []);
+
+    // fetch assessments for a course
+    const fetchAssessmentsForCourse = async (cId) => {
+      if (!cId) {
+        setCourseAssessments([]);
+        return;
+      }
+      try {
+        const res = await fetch(`${API_BASE}/assessments?course_id=${cId}`, { headers: { Authorization: `Bearer ${token}` }});
+        if (!res.ok) {
+          console.warn("Could not fetch course assessments", res.status);
+          setCourseAssessments([]);
+          return;
+        }
+        const data = await res.json();
+        setCourseAssessments(data.map(a => ({ id: a.id?.toString() ?? a.id, title: a.title })));
+      } catch (err) {
+        console.error("Fetch course assessments error:", err);
+        setCourseAssessments([]);
+      }
+    };
+
+    // fetch assigned assessments for a user (to show history/unassign)
+    const fetchAssignedForUser = async (userId) => {
+      if (!userId) {
+        setAssignedList([]);
+        return;
+      }
+      try {
+        setLoadingAssigned(true);
+        const res = await fetch(`${API_BASE}/assigned_assessments?user_id=${userId}`, { headers: { Authorization: `Bearer ${token}` }});
+        if (!res.ok) {
+          // fallback: try /assessments/assigned or /assessments/user/:id depending on backend
+          console.warn("assigned_assessments query failed", res.status);
+          setAssignedList([]);
+          return;
+        }
+        const data = await res.json();
+        // normalize expected format: id, user_id, assessment_id, assigned_at
+        setAssignedList(data.map(a => ({ id: a.id?.toString() ?? a.id, user_id: a.user_id, assessment_id: a.assessment_id, assigned_at: a.assigned_at })));
+      } catch (err) {
+        console.error("Fetch assigned error:", err);
+        setAssignedList([]);
+      } finally {
+        setLoadingAssigned(false);
+      }
+    };
+
+    // watch course changes
+    useEffect(() => {
+      fetchAssessmentsForCourse(courseId);
+    }, [courseId]);
+
+    // when target user selected, load their assigned list
+    useEffect(() => {
+      if (target?.id) {
+        fetchAssignedForUser(target.id);
+      } else {
+        setAssignedList([]);
+      }
+    }, [target]);
+
+    const assign = async () => {
+      if (!target || !courseId || !assessmentId) return alert("Select user, course and assessment");
+      try {
+        const payload = { user_id: target.id, assessment_id: assessmentId };
+        const res = await fetch(`${API_BASE}/assessments/assign`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || `Status ${res.status}`);
+        pushNote("assessment_assigned", `Assigned "${courseAssessments.find(a=>a.id==assessmentId)?.title ?? assessmentId}" to ${target.name}`);
+        // refresh assigned list
+        await fetchAssignedForUser(target.id);
+        alert("✅ Assessment assigned successfully!");
+      } catch (err) {
+        alert("Assign failed: " + err.message);
+      }
+    };
+
+    const unassign = async (assignId) => {
+      if (!window.confirm("Remove this assigned assessment?")) return;
+      try {
+        const res = await fetch(`${API_BASE}/assigned_assessments/${assignId}`, {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) {
+          const data = await res.json();
+          throw new Error(data.message || `Status ${res.status}`);
+        }
+        pushNote("assessment_unassigned", `Assignment removed`);
+        await fetchAssignedForUser(target.id);
+      } catch (err) {
+        alert("Unassign failed: " + err.message);
+      }
+    };
+ const CourseSelect = () => (
+    <Select onValueChange={setCourseId} value={courseId || undefined}>
+      <SelectTrigger>
+        <SelectValue placeholder="Select Course" />
+      </SelectTrigger>
+      <SelectContent>
+        {courses.length === 0 ? (
+          <SelectItem value="loading" disabled>Loading courses...</SelectItem>
+        ) : (
+          courses.map(c => (
+            <SelectItem key={c.id} value={String(c.id)}>
+              {c.title || c.name}
+            </SelectItem>
+          ))
+        )}
+      </SelectContent>
+    </Select>
+  );
+
+  // Update the assessment dropdown to show all assessments (not just course-specific)
+  const AssessmentSelect = () => (
+    <Select onValueChange={setAssessmentId} value={assessmentId || undefined}>
+      <SelectTrigger>
+        <SelectValue placeholder="Select Assessment" />
+      </SelectTrigger>
+      <SelectContent>
+        {allAssessments.length === 0 ? (
+          <SelectItem value="loading" disabled>Loading assessments...</SelectItem>
+        ) : (
+          allAssessments.map(a => (
+            <SelectItem key={a.id} value={String(a.id)}>
+              {a.title}
+            </SelectItem>
+          ))
+        )}
+      </SelectContent>
+    </Select>
+  );
+
+
+    return (
+      <Section title="Assign Assessment" icon={ClipboardList}>
+        <FindUser users={users} onSelect={(u) => { setTarget(u); setCourseId(""); setAssessmentId(""); }} label="Verify User" />
+        {target && (
+          <>
+            <div className="mt-4 grid md:grid-cols-3 gap-3 items-end">
+              <div>
+                <Label className="text-gray-400">Selected User</Label>
+                <div className="text-white">{target.name} · {target.rank} · {target.belt}</div>
+              </div>
+              
+            <CourseSelect />
+            <AssessmentSelect />
+
+
+
+              <div className="md:col-span-3 flex justify-end gap-2">
+                <Button onClick={assign} disabled={!assessmentId}>Assign</Button>
+                <Button variant="secondary" onClick={() => { setTarget(null); setCourseId(""); setAssessmentId(""); }}>Clear</Button>
+              </div>
+            </div>
+
+            <div className="mt-6">
+              <Card className="rounded-2xl bg-gray-800 border-gray-700">
+                <CardHeader><CardTitle className="text-white">Assigned Assessments</CardTitle></CardHeader>
+                <CardContent>
+                  {loadingAssigned ? <div className="text-gray-400">Loading assignments...</div> : (
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full text-sm">
+                        <thead>
+                          <tr className="text-left border-b border-gray-700">
+                            <th className="py-2 text-gray-400">Assessment</th>
+                            <th className="py-2 text-gray-400">Course</th>
+                            <th className="py-2 text-gray-400">Assigned At</th>
+                            <th className="py-2 text-gray-400">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {assignedList.length === 0 ? (
+                            <tr><td colSpan={4} className="py-4 text-gray-400">No assigned assessments</td></tr>
+                          ) : assignedList.map(a => {
+                            // try to resolve names from assessments list
+                            const assess = courseAssessments.find(x => String(x.id) === String(a.assessment_id)) || assessments.find(x => String(x.id) === String(a.assessment_id));
+                            const courseForAssess = courses.find(c => String(c.id) === String((assess && assess.course_id) || courseId));
+                            return (
+                              <tr key={a.id} className="border-b border-gray-700">
+                                <td className="py-2 text-white">{assess?.title ?? `ID ${a.assessment_id}`}</td>
+                                <td className="py-2 text-white">{courseForAssess?.title ?? courseForAssess?.name ?? "-"}</td>
+                                <td className="py-2 text-gray-400">{a.assigned_at ? new Date(a.assigned_at).toLocaleString() : "-"}</td>
+                                <td className="py-2 flex gap-2">
+                                  <Button size="sm" variant="outline" onClick={() => { navigator.clipboard?.writeText(`${API_BASE}/assessments/${a.assessment_id}`); pushNote("copied_link", "Assessment link copied"); }}>Copy Link</Button>
+                                  <Button size="sm" variant="destructive" onClick={() => unassign(a.id)}>Remove</Button>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </>
+        )}
+      </Section>
+    );
+  }
+
+
  // ------- COURSE MANAGEMENT -------
 function FeatureCourse() {
   const [form, setForm] = useState({
@@ -560,71 +1098,138 @@ function FeatureCourse() {
   const [isEditing, setIsEditing] = useState(false);
 
   // --- Submit handler (Add or Update) ---
-  const onSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      const token = localStorage.getItem("authToken");
-      const formData = new FormData();
-      formData.append("title", form.name);
-      formData.append("category", form.category);
-      formData.append("description", form.description);
-      formData.append("duration", "1 Week");
-      if (form.image) formData.append("img", form.image);
+  // const onSubmit = async (e) => {
+  //   e.preventDefault();
+  //   try {
+  //     const token = localStorage.getItem("authToken");
+  //     const formData = new FormData();
+  //     formData.append("title", form.name);
+  //     formData.append("category", form.category);
+  //     formData.append("description", form.description);
+  //     formData.append("duration", "1 Week");
+  //     if (form.image) formData.append("img", form.image);
 
-      const url = isEditing
-        ? `${API_BASE}/courses/${form.id}`
-        : `${API_BASE}/courses`;
-      const method = isEditing ? "PUT" : "POST";
+  //     const url = isEditing
+  //       ? `${API_BASE}/courses/${form.id}`
+  //       : `${API_BASE}/courses`;
+  //     const method = isEditing ? "PUT" : "POST";
 
-      const res = await fetch(url, {
-        method,
-        headers: { Authorization: `Bearer ${token}` },
-        body: formData,
-      });
+  //     const res = await fetch(url, {
+  //       method,
+  //       headers: { Authorization: `Bearer ${token}` },
+  //       body: formData,
+  //     });
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message);
+  //     const data = await res.json();
+  //     if (!res.ok) throw new Error(data.message);
 
-      if (isEditing) {
-        // update in local state
-        setCourses((prev) =>
-          prev.map((c) => (c.id === data.course.id ? data.course : c))
-        );
-        setFeaturedCourses((prev) =>
-          prev.map((c) => (c.id === data.course.id ? data.course : c))
-        );
-        setIsEditing(false);
-      } else {
-        // add new
-        setCourses((prev) => [...prev, data.course]);
-        setFeaturedCourses((prev) => [data.course, ...prev]);
-      }
+  //     if (isEditing) {
+  //       // update in local state
+  //       setCourses((prev) =>
+  //         prev.map((c) => (c.id === data.course.id ? data.course : c))
+  //       );
+  //       setFeaturedCourses((prev) =>
+  //         prev.map((c) => (c.id === data.course.id ? data.course : c))
+  //       );
+  //       setIsEditing(false);
+  //     } else {
+  //       // add new
+  //       setCourses((prev) => [...prev, data.course]);
+  //       setFeaturedCourses((prev) => [data.course, ...prev]);
+  //     }
 
-      // reset form
-      setForm({ id: null, name: "", category: "", description: "", image: null, preview: null });
-    } catch (err) {
-      alert("Failed to save course: " + err.message);
-    }
-  };
+  //     // reset form
+  //     setForm({ id: null, name: "", category: "", description: "", image: null, preview: null });
+  //   } catch (err) {
+  //     alert("Failed to save course: " + err.message);
+  //   }
+  // };
+  // In FeatureCourse component, update the onSubmit function:
+const onSubmit = async (e) => {
+  e.preventDefault();
+  try {
+    const token = localStorage.getItem("authToken");
+    const formData = new FormData();
+    formData.append("title", form.name);
+    formData.append("category", form.category);
+    formData.append("description", form.description);
+    formData.append("duration", "1 Week");
+    if (form.image) formData.append("img", form.image);
+
+    const url = isEditing
+      ? `${API_BASE}/courses/${form.id}`
+      : `${API_BASE}/courses`;
+    const method = isEditing ? "PUT" : "POST";
+
+    const res = await fetch(url, {
+      method,
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData,
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message);
+
+    // Instead of manually updating state, refetch all courses
+    await refetchCourses(); // This will refresh the courses from database
+
+    // reset form
+    setForm({ id: null, name: "", category: "", description: "", image: null, preview: null });
+    setIsEditing(false);
+  } catch (err) {
+    alert("Failed to save course: " + err.message);
+  }
+};
+// Add this function in your main component (after the courses state)
+const refetchCourses = async () => {
+  try {
+    const res = await fetch(`${API_BASE}/courses`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) return;
+    const response = await res.json();
+    console.log("Refetch API response:", response); // Debug log
+    
+    // Backend returns { success: true, data: [...courses] }
+    const data = response.data || response; // Handle both response formats
+    console.log("Refetch courses data:", data); // Debug log
+    
+    const normalized = data.map((c) => ({
+      id: c.id?.toString() ?? c.id,
+      name: c.title ?? c.name,
+      title: c.title ?? c.name,
+      category: c.category,
+      description: c.description,
+      img: c.img,
+      duration: c.duration,
+      ...c,
+    }));
+    setCourses(normalized);
+    setFeaturedCourses(normalized);
+    console.log("Courses updated:", normalized.length); // Debug log
+  } catch (err) {
+    console.error("Failed to refetch courses:", err);
+  }
+};
 
   // --- Delete course ---
-  const handleDelete = async (courseId) => {
-    if (!window.confirm("Are you sure you want to delete this course?")) return;
-    try {
-      const token = localStorage.getItem("authToken");
-      const res = await fetch(`${API_BASE}/courses/${courseId}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message);
+const handleDelete = async (courseId) => {
+  if (!window.confirm("Are you sure you want to delete this course?")) return;
+  try {
+    const token = localStorage.getItem("authToken");
+    const res = await fetch(`${API_BASE}/courses/${courseId}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message);
 
-      setCourses((prev) => prev.filter((c) => c.id !== courseId));
-      setFeaturedCourses((prev) => prev.filter((c) => c.id !== courseId));
-    } catch (err) {
-      alert("Delete failed: " + err.message);
-    }
-  };
+    // Refetch courses instead of manual state update
+    await refetchCourses();
+  } catch (err) {
+    alert("Delete failed: " + err.message);
+  }
+};
 
   // --- Start editing ---
   const handleEdit = (course) => {
@@ -644,6 +1249,7 @@ function FeatureCourse() {
   return (
     <Section title="Add Featured Course" icon={BookOpen}>
       {/* Form */}
+      <Button className="z-2 bg-gradient-to-r from-red-600 to-blue-700 text-white" onClick={refetchCourses}>Refresh Courses</Button>
       <form onSubmit={onSubmit} className="grid md:grid-cols-4 gap-3">
         <Input
           required
@@ -691,7 +1297,7 @@ function FeatureCourse() {
         </div>
         <div className="md:col-span-4 flex justify-end gap-2">
           {isEditing && (
-            <Button
+            <Button 
               type="button"
               variant="secondary"
               onClick={() => {
@@ -702,7 +1308,7 @@ function FeatureCourse() {
               Cancel
             </Button>
           )}
-          <Button type="submit">{isEditing ? "Update Course" : "Add Course"}</Button>
+          <Button className="z-2 bg-gradient-to-r from-red-600 to-blue-700 text-white" type="submit">{isEditing ? "Update Course" : "Add Course"}</Button>
         </div>
       </form>
 
@@ -748,8 +1354,6 @@ function FeatureCourse() {
     </Section>
   );
 }
-
-
   // ------- SUCCESS STORIES -------
   function SuccessStories() {
     const [form, setForm] = useState({ state: "", category: "", moduleName: "", description: "", files: [] });
@@ -776,7 +1380,7 @@ function FeatureCourse() {
               setForm({...form, files});
             }}/>
           </Label>
-          <div className="md:col-span-4 flex justify-end"><Button type="submit">Add Story</Button></div>
+          <div className="md:col-span-4 flex justify-end "><Button className="bg-gradient-to-r from-red-600 to-blue-700 text-white" type="submit">Add Story</Button></div>
         </form>
         {stories.length>0 && (
           <div className="mt-4 overflow-x-auto">
@@ -862,7 +1466,7 @@ function FeatureCourse() {
               </div>
               <input type="file" accept=".pdf,.doc,.docx,.xls,.xlsx" multiple className="hidden" onChange={(e)=> setNotice({...notice, files: Array.from(e.target.files||[])})} />
             </Label>
-            <div className="md:col-span-6 flex justify-end"><Button type="submit">Add Notice</Button></div>
+            <div className="md:col-span-6 flex justify-end "><Button className="bg-gradient-to-r from-red-600 to-blue-700 text-white" type="submit">Add Notice</Button></div>
           </form>
           <div className="mt-4 grid md:grid-cols-2 gap-4">
             <Card className="rounded-2xl bg-gray-800 border-gray-700"><CardHeader><CardTitle className="text-white">Active ({archivedSplit.active.length})</CardTitle></CardHeader><CardContent>
@@ -906,7 +1510,7 @@ function FeatureCourse() {
               </div>
               <input type="file" accept=".pdf,.doc,.docx,.xls,.xlsx" multiple className="hidden" onChange={(e)=> setManual({...manual, files: Array.from(e.target.files||[])})} />
             </Label>
-            <div className="md:col-span-6 flex justify-end"><Button type="submit">Add Manual</Button></div>
+            <div className="md:col-span-6 flex justify-end"><Button className="bg-gradient-to-r from-red-600 to-blue-700 text-white" type="submit">Add Manual</Button></div>
           </form>
           {manuals.length>0 && (
             <div className="mt-4 space-y-2">
@@ -944,7 +1548,7 @@ function FeatureCourse() {
                 setUform({...uform, image:f||null, preview:fileToURL(f)});
               }} />
             </Label>
-            <div className="md:col-span-6 flex justify-end"><Button type="submit">Add App</Button></div>
+            <div className="md:col-span-6 flex justify-end"><Button className="bg-gradient-to-r from-red-600 to-blue-700 text-white" type="submit">Add App</Button></div>
           </form>
           {upcomingApps.length>0 && (
             <div className="grid md:grid-cols-3 gap-4 mt-4">
@@ -985,7 +1589,7 @@ function FeatureCourse() {
                 setTform({...tform, image:f||null, preview:fileToURL(f)});
               }} />
             </Label>
-            <div className="md:col-span-6 flex justify-end"><Button type="submit">Add App</Button></div>
+            <div className="md:col-span-6 flex justify-end"><Button className="bg-gradient-to-r from-red-600 to-blue-700 text-white" type="submit">Add App</Button></div>
           </form>
           {testingApps.length>0 && (
             <div className="grid md:grid-cols-3 gap-4 mt-4">
@@ -1084,7 +1688,7 @@ function FeatureCourse() {
             <Input placeholder="Name" value={rname} onChange={e=>setRname(e.target.value)} className="bg-gray-700 border-gray-600 text-white" />
             <Input placeholder="Mobile" value={rmobile} onChange={e=>setRmobile(e.target.value)} className="bg-gray-700 border-gray-600 text-white" />
             <Input placeholder="Reason" value={rreason} onChange={e=>setRreason(e.target.value)} className="bg-gray-700 border-gray-600 text-white" />
-            <Button onClick={submitRequest}>Submit</Button>
+            <Button className="bg-gradient-to-r from-red-600 to-blue-700 text-white" onClick={submitRequest}>Submit</Button>
           </div>
           <div className="mt-4 space-y-2 max-h-72 overflow-auto pr-1">
             {idRequests.map(r => (
@@ -1113,7 +1717,7 @@ function FeatureCourse() {
               </SelectContent>
             </Select>
             <Input placeholder="Message" value={fmsg} onChange={e=>setFmsg(e.target.value)} className="md:col-span-2 bg-gray-700 border-gray-600 text-white"/>
-            <Button onClick={submitFeedback}>Submit</Button>
+            <Button className="bg-gradient-to-r from-red-600 to-blue-700 text-white" onClick={submitFeedback}>Submit</Button>
           </div>
           <div className="mt-4 space-y-2 max-h-72 overflow-auto pr-1">
             {feedbacks.map(f => (
@@ -1134,20 +1738,22 @@ function FeatureCourse() {
     );
   }
 
+  
+
   // ------- DASHBOARD LANDING -------
   function DashboardLanding() {
     return (
       <div className="grid gap-6">
-        <div className="grid md:grid-cols-4 gap-4">
+        <div className="grid md:grid-cols-4 gap-4 z-2">
           <StatCard icon={Users} title="Users" value={users.length} sub={`Updated: ${todayISO()}`} />
           <StatCard icon={BarChart3} title="Assessments Given" value={courseStats.given} />
           <StatCard icon={CheckCircle2} title="Passed" value={courseStats.passed} />
           <StatCard icon={XCircle} title="Failed" value={courseStats.failed} />
         </div>
 
-        <Card className="rounded-2xl bg-gray-800 border-gray-700">
+        <Card className="rounded-2xl bg-gray-800 border-gray-700 z-2">
           <CardHeader className="flex flex-row items-center justify-between">
-            <div className="flex items-center gap-2"><BarChart3 className="w-5 h-5 text-gray-400"/><CardTitle className="text-white">Course Performance</CardTitle></div>
+            <div className="flex items-center gap-2"><BarChart3 className="w-5 h-5 text-yellow-400"/><CardTitle className="text-white">Course Performance</CardTitle></div>
             <Select value={selectedCourseId} onValueChange={setSelectedCourseId}>
               <SelectTrigger className="w-56 bg-gray-700 border-gray-600 text-white"><SelectValue placeholder="Select course" /></SelectTrigger>
               <SelectContent className="bg-gray-800 border-gray-700 text-white">
@@ -1190,12 +1796,19 @@ function FeatureCourse() {
   // ------- MAIN LAYOUT -------
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-800 text-white flex">
+              {/* Neon Glow Background */}
+      <div className="absolute inset-0">
+        <div className="absolute top-20 left-10 w-72 h-72 bg-purple-700 rounded-full mix-blend-screen filter blur-3xl opacity-30 animate-pulse"></div>
+        <div className="absolute top-40 right-10 w-72 h-72 bg-blue-700 rounded-full mix-blend-screen filter blur-3xl opacity-30 animate-pulse delay-1000"></div>
+        <div className="absolute -bottom-8 left-20 w-72 h-72 bg-red-700 rounded-full mix-blend-screen filter blur-3xl opacity-30 animate-pulse delay-2000"></div>
+      </div>
+
       {/* Sidebar */}
-      <div className="w-64 bg-gray-800 border-r border-gray-700 p-4 flex flex-col">
-        <div className="flex items-center gap-3 mb-8">
-          <img src='./images/logoo.png' alt="Punjab Police Logo" className="w-9 h-9 rounded-2xl object-contain" />
-          <div>
-            <div className="font-semibold leading-tight">Admin Dashboard</div>
+      <div className="w-64 bg-black border-r border-gray-700 p-4 flex flex-col z-2">
+        <div className="py-6 flex items-center gap-3 mb-8 border-b border-gray-700">
+          <img src="/images/logoo.png" alt="Punjab Police Logo" className="w-11 h-11 p-1 bg-gradient-to-r from-red-600 to-blue-700 rounded-xl" />
+        <div>
+            <div className="text-yellow-400 font-bold">SuperAdmin Dashboard</div>
             <div className="text-xs text-gray-400">Punjab Police Training Portal</div>
           </div>
         </div>
@@ -1203,117 +1816,93 @@ function FeatureCourse() {
         <nav className="space-y-2 flex-1">
           <button 
             onClick={() => setActiveTab("dashboard")} 
-            className={`w-full flex items-center gap-3 p-3 rounded-xl text-left transition-colors ${
-              activeTab === "dashboard" ? "bg-blue-600 text-white" : "text-gray-400 hover:bg-gray-700 hover:text-white"
+            className={`w-full flex items-center gap-3 p-4 rounded-xl text-left transition-colors ${
+              activeTab === "dashboard" ? "bg-gradient-to-r from-red-600 to-blue-700" : "bg-gray-800"
             }`}
           >
-            <BarChart3 className="w-5 h-5" />
+            <BarChart3 className="text-yellow-400" />
             <span>Dashboard</span>
           </button>
           
           <button 
             onClick={() => setActiveTab("user")} 
-            className={`w-full flex items-center gap-3 p-3 rounded-xl text-left transition-colors ${
-              activeTab === "user" ? "bg-blue-600 text-white" : "text-gray-400 hover:bg-gray-700 hover:text-white"
+            className={`w-full flex items-center gap-3 p-4 rounded-xl text-left transition-colors ${
+              activeTab === "user" ? "bg-gradient-to-r from-red-600 to-blue-700" : "bg-gray-800"
             }`}
           >
-            <Users className="w-5 h-5" />
+            <Users className="text-yellow-400" />
             <span>User Management</span>
           </button>
           
           <button 
             onClick={() => setActiveTab("course")} 
-            className={`w-full flex items-center gap-3 p-3 rounded-xl text-left transition-colors ${
+            className={`w-full flex items-center gap-3 p-4 rounded-xl text-left transition-colors ${
               
-              activeTab === "course" ? "bg-blue-600 text-white" : "text-gray-400 hover:bg-gray-700 hover:text-white"
+              activeTab === "course" ? "bg-gradient-to-r from-red-600 to-blue-700" : "bg-gray-800"
             }`}
           >
-            <BookOpen className="w-5 h-5" />
+            <BookOpen className="text-yellow-400" />
             <span>Course Management</span>
+          </button>
+
+          <button 
+            onClick={() => setActiveTab("assessment")} 
+            className={`w-full flex items-center gap-3 p-4 rounded-xl text-left transition-colors ${
+              activeTab === "assessment" ? "bg-gradient-to-r from-red-600 to-blue-700" : "bg-gray-800"
+            }`}
+          >
+            <ClipboardList className="text-yellow-400" />
+            <span>Assessment Management</span>
           </button>
           
           <button 
             onClick={() => setActiveTab("stories")} 
-            className={`w-full flex items-center gap-3 p-3 rounded-xl text-left transition-colors ${
-              activeTab === "stories" ? "bg-blue-600 text-white" : "text-gray-400 hover:bg-gray-700 hover:text-white"
+            className={`w-full flex items-center gap-3 p-4 rounded-xl text-left transition-colors ${
+              activeTab === "stories" ? "bg-gradient-to-r from-red-600 to-blue-700" : "bg-gray-800"
             }`}
           >
-            <CheckCircle2 className="w-5 h-5" />
+            <CheckCircle2 className="text-yellow-400" />
             <span>Success Stories</span>
           </button>
           
           <button 
             onClick={() => setActiveTab("updates")} 
-            className={`w-full flex items-center gap-3 p-3 rounded-xl text-left transition-colors ${
-              activeTab === "updates" ? "bg-blue-600 text-white" : "text-gray-400 hover:bg-gray-700 hover:text-white"
+            className={`w-full flex items-center gap-3 p-4 rounded-xl text-left transition-colors ${
+              activeTab === "updates" ? "bg-gradient-to-r from-red-600 to-blue-700" : "bg-gray-800"
             }`}
           >
-            <Megaphone className="w-5 h-5" />
+            <Megaphone className="text-yellow-400" />
             <span>Latest Updates</span>
           </button>
         </nav>
-        
-        <div className="pt-4 border-t border-gray-700">
-          <button 
-            onClick={handleLogout}
-            className="w-full flex items-center gap-3 p-3 rounded-xl text-left text-gray-400 hover:bg-gray-700 hover:text-white transition-colors"
-          >
-            <LogOut className="w-5 h-5" />
-            <span>Logout</span>
-          </button>
-        </div>
+          <div className=" mt-4 py-4 border-t border-gray-700">
+            <button onClick={handleLogout} className="mt-3 w-full flex items-center justify-center gap-2 bg-gradient-to-r from-red-600 to-blue-700 px-3 py-2 rounded-lg font-semibold">
+              <LogOut className="w-5 h-5" /> <span>Logout</span>
+            </button>
+          </div>
       </div>
 
-      {/* Main Content */}
-      <div className="flex-1 overflow-auto">
-        
-        <header className="sticky top-0 z-10 bg-gray-800 border-b border-gray-700">
-          <div className="px-6 py-3 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <img src='./images/logoo.png' alt="Punjab Police Logo" className="w-8 h-8 rounded-xl object-contain" />
-              <div className="text-xl font-semibold">
-                {activeTab === "dashboard" && "Dashboard"}
-                {activeTab === "user" && "User Management"}
-                {activeTab === "course" && "Course Management"}
-                {activeTab === "stories" && "Success Stories"}
-                {activeTab === "updates" && "Latest Updates"}
+      <div className="flex-1 p-6 overflow-auto z-2">
+        <div className="max-w-full">
+          <AnimatePresence mode="wait">
+            {activeTab === "dashboard" && <motion.div key="dash" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}><DashboardLanding /></motion.div>}
+            {activeTab === "user" && <motion.div key="user" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              <div className="grid gap-6">
+                
+                  <AddUser />
+                  <UpdateUser users={users} setUsers={setUsers} />
+                  <RemoveUser users={users} setUsers={setUsers} />
+                
+                <UserAchievement />
+                <AssignAssessment />
               </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <Badge variant="secondary" className="rounded-full px-3 py-1 flex items-center gap-1 bg-gray-700 text-white"><Bell className="w-4 h-4"/> {notifications.length}</Badge>
-              <Button variant="outline" size="sm" onClick={handleLogout} className="flex items-center gap-2">
-                <LogOut className="w-4 h-4" />
-                Logout
-              </Button>
-            </div>
-          </div>
-        </header>
-
-        <main className="p-6">
-          {activeTab === "dashboard" && <DashboardLanding />}
-          {activeTab === "user" && (
-            <div className="grid gap-6">
-              <AddUser />
-              {/* <FindUser users={users} onSelect={(u) => console.log("Found:", u)} /> */}
-
-              <UpdateUser users={users} setUsers={setUsers} />
-
-              <RemoveUser users={users} setUsers={setUsers} />
-              <UserAchievement />
-            </div>
-          )}
-          {activeTab === "course" && <FeatureCourse />}
-          {activeTab === "stories" && <SuccessStories />}
-          {activeTab === "updates" && <LatestUpdates />}
-        </main>
-
-        <footer className="px-6 py-8 text-center text-xs text-gray-400 border-t border-gray-700">
-        <div className="flex items-center justify-center gap-2 mb-2">
-          <img src= './images/logoo.png' alt="Punjab Police Logo" className="w-6 h-6 object-contain" />
-          <span>Punjab Police Training Program</span>
+            </motion.div>}
+            {activeTab === "course" && <motion.div key="course" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}><FeatureCourse /></motion.div>}
+            {activeTab === "assessment" && <motion.div key="assessment" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}><AssessmentManagement /></motion.div>}
+            {activeTab === "stories" && <motion.div key="stories" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}><SuccessStories /></motion.div>}
+            {activeTab === "updates" && <motion.div key="updates" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}><LatestUpdates /></motion.div>}
+          </AnimatePresence>
         </div>
-        <div>&copy; 2025. Developed by IT Wing, Punjab Police. All rights reserved.</div>
-      </footer>
       </div>
     </div>
   );

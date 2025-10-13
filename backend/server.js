@@ -7,14 +7,19 @@ import authRoutes from "./routes/authRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import coursesRoutes from "./routes/coursesRoutes.js";
-
+import assessmentRoutes from "./routes/assessmentRoutes.js";
+import translationRoutes from "./routes/translationsRoutes.js";
+import questionsRoutes from "./routes/questionsRoutes.js";
 import path from "path";
 import { fileURLToPath } from "url";
 
 dotenv.config();
 
 const app = express();
-app.use(cors({ origin: "http://localhost:3000", credentials: true }));
+app.use(cors({
+  origin: ["http://localhost:3000", "http://localhost:3001"],
+  credentials: true,
+}));
 app.use(express.json());
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -37,5 +42,8 @@ app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/courses", coursesRoutes);
+app.use("/api/assessments", assessmentRoutes);
+app.use("/api/translations", translationRoutes);
+app.use("/api/questions", questionsRoutes);
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));
